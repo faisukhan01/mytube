@@ -1,6 +1,6 @@
 'use client';
 
-import { Video } from '@/lib/youtube-data';
+import { Video, shortsVideos } from '@/lib/youtube-data';
 import { useYouTubeStore } from '@/store/youtube-store';
 import { MoreVertical, Play, Clock, ListPlus } from 'lucide-react';
 import {
@@ -34,7 +34,7 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
 }
 
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
-  const { openVideo, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel } = useYouTubeStore();
+  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
   const isWatchLater = watchLater.includes(video.id);
   const isLiked = likedVideos.includes(video.id);
@@ -59,11 +59,20 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
     }
   };
 
+  const handleShortClick = () => {
+    const index = shortsVideos.findIndex((v) => v.id === video.id);
+    if (index >= 0) {
+      openShort(index);
+    } else {
+      openVideo(video);
+    }
+  };
+
   if (layout === 'shorts') {
     return (
       <div
         className="cursor-pointer group shrink-0 w-[170px] sm:w-[190px]"
-        onClick={() => openVideo(video)}
+        onClick={handleShortClick}
       >
         <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
           {!imageError ? (

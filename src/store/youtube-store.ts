@@ -15,6 +15,7 @@ export interface UserData {
 interface YouTubeState {
   currentView: ViewMode;
   currentVideo: Video | null;
+  currentShortIndex: number;
   searchQuery: string;
   sidebarOpen: boolean;
   sidebarMini: boolean;
@@ -33,6 +34,7 @@ interface YouTubeState {
   // Actions
   setCurrentView: (view: ViewMode) => void;
   setCurrentVideo: (video: Video | null) => void;
+  setCurrentShortIndex: (index: number) => void;
   setSearchQuery: (query: string) => void;
   setSearchResults: (results: Video[]) => void;
   toggleSidebar: () => void;
@@ -46,6 +48,7 @@ interface YouTubeState {
   setMiniPlayerVideo: (video: Video | null) => void;
   setSelectedChannel: (channel: string) => void;
   openVideo: (video: Video) => void;
+  openShort: (index: number) => void;
   search: (query: string) => void;
   goHome: () => void;
   openChannel: (channelName: string) => void;
@@ -62,6 +65,7 @@ interface YouTubeState {
 export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   currentView: 'home',
   currentVideo: null,
+  currentShortIndex: 0,
   searchQuery: '',
   sidebarOpen: true,
   sidebarMini: false,
@@ -79,6 +83,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
 
   setCurrentView: (view) => set({ currentView: view }),
   setCurrentVideo: (video) => set({ currentVideo: video }),
+  setCurrentShortIndex: (index) => set({ currentShortIndex: index }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSearchResults: (results) => set({ searchResults: results }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
@@ -196,6 +201,13 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
       currentVideo: video,
     });
     get().addToHistory(video.id);
+  },
+
+  openShort: (index) => {
+    set({
+      currentView: 'shorts',
+      currentShortIndex: index,
+    });
   },
 
   search: (query) => {

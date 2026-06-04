@@ -487,28 +487,40 @@ export default function VideoPlayerView() {
             </div>
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => toast.info('WhatsApp sharing coming soon')}
+                onClick={() => {
+                  const url = `https://www.youtube.com/watch?v=${currentVideo.id}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(currentVideo.title + ' ' + url)}`, '_blank');
+                }}
                 className="flex flex-col items-center gap-1 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold">W</div>
                 <span className="text-xs text-gray-600 dark:text-gray-400">WhatsApp</span>
               </button>
               <button
-                onClick={() => toast.info('Twitter sharing coming soon')}
+                onClick={() => {
+                  const url = `https://www.youtube.com/watch?v=${currentVideo.id}`;
+                  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(currentVideo.title)}&url=${encodeURIComponent(url)}`, '_blank');
+                }}
                 className="flex flex-col items-center gap-1 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="w-10 h-10 bg-sky-500 rounded-full flex items-center justify-center text-white text-sm font-bold">X</div>
                 <span className="text-xs text-gray-600 dark:text-gray-400">Twitter</span>
               </button>
               <button
-                onClick={() => toast.info('Facebook sharing coming soon')}
+                onClick={() => {
+                  const url = `https://www.youtube.com/watch?v=${currentVideo.id}`;
+                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                }}
                 className="flex flex-col items-center gap-1 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">f</div>
                 <span className="text-xs text-gray-600 dark:text-gray-400">Facebook</span>
               </button>
               <button
-                onClick={() => toast.info('Email sharing coming soon')}
+                onClick={() => {
+                  const url = `https://www.youtube.com/watch?v=${currentVideo.id}`;
+                  window.open(`mailto:?subject=${encodeURIComponent(currentVideo.title)}&body=${encodeURIComponent(url)}`);
+                }}
                 className="flex flex-col items-center gap-1 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-bold">@</div>

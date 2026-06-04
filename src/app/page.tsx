@@ -8,7 +8,7 @@ import CategoryChips from '@/components/youtube/category-chips';
 import VideoGrid from '@/components/youtube/video-grid';
 import VideoPlayerView from '@/components/youtube/video-player-view';
 import SearchResults from '@/components/youtube/search-results';
-import ShortsSection from '@/components/youtube/shorts-section';
+import ShortsPlayer from '@/components/youtube/shorts-player';
 import TrendingView from '@/components/youtube/trending-view';
 import ChannelView from '@/components/youtube/channel-view';
 import {
@@ -17,14 +17,12 @@ import {
   WatchLaterView,
   SubscriptionsView,
 } from '@/components/youtube/library-views';
-import { shortsVideos } from '@/lib/youtube-data';
-import VideoCard from '@/components/youtube/video-card';
 
 export default function Home() {
   const { currentView, sidebarOpen, sidebarMini, checkSession } = useYouTubeStore();
 
   const showCategoryChips = currentView === 'home';
-  const showSidebar = currentView !== 'player';
+  const showSidebar = currentView !== 'player' && currentView !== 'shorts';
 
   // Check session on mount
   useEffect(() => {
@@ -53,19 +51,7 @@ export default function Home() {
       case 'search':
         return <SearchResults />;
       case 'shorts':
-        return (
-          <div className="p-4 md:p-6">
-            <ShortsSection />
-            <div className="mt-8">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">More Shorts</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {shortsVideos.map((video) => (
-                  <VideoCard key={video.id} video={video} layout="shorts" />
-                ))}
-              </div>
-            </div>
-          </div>
-        );
+        return <ShortsPlayer />;
       case 'trending':
         return <TrendingView />;
       case 'history':
@@ -103,7 +89,8 @@ export default function Home() {
         {renderContent()}
       </main>
 
-      {/* Footer */}
+      {/* Footer - hidden in shorts and player view */}
+      {currentView !== 'shorts' && currentView !== 'player' && (
       <footer
         className={`border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] py-4 px-6 mt-auto transition-all duration-200 ${getMainClasses()}`}
       >
@@ -135,6 +122,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 }
