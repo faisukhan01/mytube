@@ -4,6 +4,7 @@ import { useYouTubeStore } from '@/store/youtube-store';
 import { getVideosByCategory } from '@/lib/youtube-data';
 import type { Video } from '@/lib/youtube-data';
 import VideoCard from './video-card';
+import ChannelStories from './channel-stories';
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -272,7 +273,11 @@ export default function VideoGrid() {
   }
 
   return (
-    <div className="p-2 md:p-4 lg:p-6 page-transition" key={selectedCategory}>
+    <div className="page-transition" key={selectedCategory}>
+      {/* Channel Stories row - only on home/All */}
+      <ChannelStories />
+
+      <div className="p-2 md:p-4 lg:p-6">
       {/* Category heading + Sort dropdown */}
       <div className="flex items-center justify-between mb-4">
         {selectedCategory !== 'All' ? (
@@ -380,6 +385,7 @@ export default function VideoGrid() {
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Try selecting a different category</p>
         </div>
       )}
+      </div>
     </div>
   );
 }

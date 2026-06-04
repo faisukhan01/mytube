@@ -6,6 +6,7 @@ import VideoCard from './video-card';
 import PlaylistDialog from './playlist-dialog';
 import LiveChat from './live-chat';
 import TranscriptPanel from './transcript-panel';
+import KeyboardShortcutsDialog from './keyboard-shortcuts-dialog';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -33,6 +34,8 @@ import {
   Scissors,
   MessageSquare,
   FileText,
+  DollarSign,
+  HelpCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -196,6 +199,10 @@ export default function VideoPlayerView() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
+  const [commentReactions, setCommentReactions] = useState<Record<string, string>>({});
+  const [emojiPickerCommentId, setEmojiPickerCommentId] = useState<string | null>(null);
+  const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
+  const emojiHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [likeAnimating, setLikeAnimating] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
@@ -205,6 +212,10 @@ export default function VideoPlayerView() {
   const [showClipDialog, setShowClipDialog] = useState(false);
   const [clipStart, setClipStart] = useState(0);
   const [clipEnd, setClipEnd] = useState(15);
+  const [showThanksDialog, setShowThanksDialog] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [autoplayCountdown, setAutoplayCountdown] = useState<number | null>(null);
+  const [autoplayNextVideo, setAutoplayNextVideo] = useState<typeof currentVideo | null>(null);
   const autoplayCancelledRef = useRef(false);
   const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -252,63 +263,48 @@ export default function VideoPlayerView() {
     }
   }, []);
 
-  // Handle video ended - autoplay next
+  // Handle video ended - autoplay next with overlay countdown
   const handleVideoEnded = useCallback(() => {
     if (!autoplay) return;
 
     autoplayCancelledRef.current = false;
-    let countdown = 5;
     const nextVideo = videoQueue.length > 0 ? videoQueue[0] : relatedVideos[0];
     if (!nextVideo) return;
 
-    const nextTitle = nextVideo.title.length > 40 ? nextVideo.title.substring(0, 40) + '...' : nextVideo.title;
-    const toastId = toast(`Playing next in ${countdown}s: ${nextTitle}`, {
-      duration: 6000,
-      action: {
-        label: 'Cancel',
-        onClick: () => {
-          autoplayCancelledRef.current = true;
-          if (countdownTimeoutRef.current) {
-            clearTimeout(countdownTimeoutRef.current);
-            countdownTimeoutRef.current = null;
-          }
-          toast.dismiss(toastId);
-        },
-      },
-    });
+    setAutoplayNextVideo(nextVideo);
+    setAutoplayCountdown(5);
 
     const tick = () => {
-      countdown -= 1;
-      if (countdown <= 0 && !autoplayCancelledRef.current) {
-        toast.dismiss(toastId);
-        if (videoQueue.length > 0) {
-          playNext();
-        } else if (relatedVideos[0]) {
-          openVideo(relatedVideos[0]);
+      setAutoplayCountdown(prev => {
+        if (prev === null) return null;
+        const next = prev - 1;
+        if (next <= 0 && !autoplayCancelledRef.current) {
+          setAutoplayNextVideo(null);
+          if (videoQueue.length > 0) {
+            playNext();
+          } else if (relatedVideos[0]) {
+            openVideo(relatedVideos[0]);
+          }
+          return null;
         }
-        return;
-      }
-      if (!autoplayCancelledRef.current) {
-        toast(`Playing next in ${countdown}s: ${nextTitle}`, {
-          id: toastId,
-          duration: 6000,
-          action: {
-            label: 'Cancel',
-            onClick: () => {
-              autoplayCancelledRef.current = true;
-              if (countdownTimeoutRef.current) {
-                clearTimeout(countdownTimeoutRef.current);
-                countdownTimeoutRef.current = null;
-              }
-              toast.dismiss(toastId);
-            },
-          },
-        });
-        countdownTimeoutRef.current = setTimeout(tick, 1000);
-      }
+        if (!autoplayCancelledRef.current && next > 0) {
+          countdownTimeoutRef.current = setTimeout(tick, 1000);
+        }
+        return next > 0 ? next : null;
+      });
     };
     countdownTimeoutRef.current = setTimeout(tick, 1000);
   }, [autoplay, videoQueue, relatedVideos, playNext, openVideo]);
+
+  const cancelAutoplay = useCallback(() => {
+    autoplayCancelledRef.current = true;
+    setAutoplayCountdown(null);
+    setAutoplayNextVideo(null);
+    if (countdownTimeoutRef.current) {
+      clearTimeout(countdownTimeoutRef.current);
+      countdownTimeoutRef.current = null;
+    }
+  }, []);
 
   // Track player state via YouTube IFrame API
   useEffect(() => {
@@ -473,6 +469,63 @@ export default function VideoPlayerView() {
       ...prev,
       [commentId]: !prev[commentId]
     }));
+    // Default reaction when clicking like
+    if (!commentLikes[commentId] && !commentReactions[commentId]) {
+      setCommentReactions(prev => ({
+        ...prev,
+        [commentId]: '👍'
+      }));
+    } else if (commentLikes[commentId]) {
+      // Remove reaction when unliking
+      setCommentReactions(prev => {
+        const next = { ...prev };
+        delete next[commentId];
+        return next;
+      });
+    }
+  };
+
+  const handleEmojiSelect = (commentId: string, emoji: string) => {
+    setCommentReactions(prev => ({ ...prev, [commentId]: emoji }));
+    setCommentLikes(prev => ({ ...prev, [commentId]: true }));
+    setEmojiPickerVisible(false);
+    setEmojiPickerCommentId(null);
+  };
+
+  const handleEmojiPickerMouseEnter = (commentId: string) => {
+    if (emojiHoverTimeoutRef.current) {
+      clearTimeout(emojiHoverTimeoutRef.current);
+      emojiHoverTimeoutRef.current = null;
+    }
+    setEmojiPickerCommentId(commentId);
+    setEmojiPickerVisible(true);
+  };
+
+  const handleEmojiPickerMouseLeave = () => {
+    emojiHoverTimeoutRef.current = setTimeout(() => {
+      setEmojiPickerVisible(false);
+      setEmojiPickerCommentId(null);
+    }, 200);
+  };
+
+  const handleLikeButtonMouseEnter = (commentId: string) => {
+    emojiHoverTimeoutRef.current = setTimeout(() => {
+      setEmojiPickerCommentId(commentId);
+      setEmojiPickerVisible(true);
+    }, 300);
+  };
+
+  const handleLikeButtonMouseLeave = () => {
+    if (emojiHoverTimeoutRef.current) {
+      clearTimeout(emojiHoverTimeoutRef.current);
+      emojiHoverTimeoutRef.current = null;
+    }
+    // Short delay before hiding to allow moving to the picker
+    emojiHoverTimeoutRef.current = setTimeout(() => {
+      if (!emojiPickerVisible) return;
+      setEmojiPickerVisible(false);
+      setEmojiPickerCommentId(null);
+    }, 200);
   };
 
   return (
@@ -480,24 +533,34 @@ export default function VideoPlayerView() {
       {/* Main content */}
       <div className="flex-1 min-w-0">
         {/* Video player */}
-        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
+        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden group">
           {isVideoLoading && (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 z-10 flex items-center justify-center">
-              {/* YouTube-style loading animation */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-14 h-10 relative">
-                  {/* Gray rectangle like YouTube player */}
-                  <div className="absolute inset-0 bg-gray-700/60 rounded-md animate-pulse" />
-                  {/* Play button in center */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              {/* Video thumbnail as background */}
+              <img
+                src={currentVideo.thumbnail}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover blur-sm scale-105"
+              />
+              {/* Semi-transparent overlay */}
+              <div className="absolute inset-0 bg-black/60" />
+              {/* YouTube-style play button loading animation */}
+              <div className="relative flex flex-col items-center gap-4 z-10">
+                {/* Large play button with loading ring */}
+                <div className="relative w-20 h-14">
+                  {/* Pulsing background circle */}
+                  <div className="absolute inset-0 bg-red-600/80 rounded-xl animate-pulse" />
+                  {/* Play triangle */}
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white/70" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="w-8 h-8 text-white ml-1" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
                 </div>
+                {/* Loading spinner */}
                 <div className="relative w-8 h-8">
                   <div className="absolute inset-0 rounded-full border-2 border-gray-600" />
-                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-red-600 animate-spin" />
+                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" />
                 </div>
               </div>
             </div>
@@ -511,12 +574,69 @@ export default function VideoPlayerView() {
             allowFullScreen
             onLoad={() => setIsVideoLoading(false)}
           />
+
+          {/* Autoplay countdown overlay */}
+          {autoplayCountdown !== null && autoplayNextVideo && (
+            <div className="absolute bottom-4 right-4 z-20 bg-black/90 rounded-lg p-3 flex items-center gap-3 min-w-[280px] max-w-[360px] animate-fade-in shadow-2xl border border-gray-700/50">
+              {/* Next video thumbnail */}
+              <div className="shrink-0 w-[120px] h-[68px] rounded overflow-hidden bg-gray-800 relative">
+                <img
+                  src={autoplayNextVideo.thumbnail}
+                  alt={autoplayNextVideo.title}
+                  className="w-full h-full object-cover"
+                />
+                {/* Countdown badge */}
+                <div className="absolute bottom-1 right-1 bg-black/90 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+                  {autoplayNextVideo.duration || '0:00'}
+                </div>
+              </div>
+              {/* Info + countdown */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">Up next</p>
+                <p className="text-xs text-white font-medium line-clamp-2 leading-4">{autoplayNextVideo.title}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  {/* Countdown timer */}
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">
+                    {autoplayCountdown}
+                  </div>
+                  {/* Cancel button */}
+                  <button
+                    onClick={cancelAutoplay}
+                    className="text-xs text-gray-300 hover:text-white font-medium px-2 py-1 hover:bg-white/10 rounded transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Keyboard shortcut hint */}
+          <button
+            onClick={() => setShowKeyboardShortcuts(true)}
+            className="absolute bottom-2 right-2 z-10 p-1.5 rounded-full bg-black/40 text-white/60 hover:text-white hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-200"
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Video title */}
         <h1 className="text-[20px] font-semibold text-gray-900 dark:text-white mt-3 leading-7">
           {currentVideo.title}
         </h1>
+
+        {/* Watch on YouTube link */}
+        <a
+          href={`https://www.youtube.com/watch?v=${currentVideo.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mt-1.5 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Watch on YouTube
+        </a>
 
         {/* Chapter markers - horizontal scrollable row */}
         {chapters.length > 0 && (
@@ -615,6 +735,15 @@ export default function VideoPlayerView() {
             >
               <Share2 className="w-5 h-5 text-gray-800 dark:text-gray-200" />
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Share</span>
+            </button>
+
+            {/* Thanks button */}
+            <button
+              onClick={() => setShowThanksDialog(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors"
+            >
+              <DollarSign className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Thanks</span>
             </button>
 
             {/* Clip button */}
@@ -918,13 +1047,41 @@ export default function VideoPlayerView() {
                     </div>
                     <p className="text-sm text-gray-800 dark:text-gray-300 mt-0.5 whitespace-pre-line">{comment.text}</p>
                     <div className="flex items-center gap-4 mt-1.5">
-                      <button
-                        onClick={() => toggleCommentLike(comment.id)}
-                        className={`flex items-center gap-1 transition-colors ${isLikedComment ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
-                      >
-                        <ThumbsUp className={`w-3.5 h-3.5 ${isLikedComment ? 'fill-current' : ''}`} />
-                        <span className="text-xs">{isLikedComment ? comment.likes + 1 : comment.likes}</span>
-                      </button>
+                      <div className="relative">
+                        {/* Emoji reaction picker popup */}
+                        {emojiPickerVisible && emojiPickerCommentId === comment.id && (
+                          <div
+                            className="absolute bottom-full mb-1 left-0 z-30"
+                            onMouseEnter={() => handleEmojiPickerMouseEnter(comment.id)}
+                            onMouseLeave={handleEmojiPickerMouseLeave}
+                          >
+                            <div className="bg-white dark:bg-[#282828] rounded-full shadow-lg flex gap-1 p-1 animate-scale-in origin-bottom-left">
+                              {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  onClick={() => handleEmojiSelect(comment.id, emoji)}
+                                  className={`w-8 h-8 flex items-center justify-center rounded-full text-lg hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors hover:scale-125 active:scale-95 ${commentReactions[comment.id] === emoji ? 'bg-gray-100 dark:bg-[#3f3f3f]' : ''}`}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => toggleCommentLike(comment.id)}
+                          onMouseEnter={() => handleLikeButtonMouseEnter(comment.id)}
+                          onMouseLeave={handleLikeButtonMouseLeave}
+                          className={`flex items-center gap-1 transition-colors ${isLikedComment ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}`}
+                        >
+                          {commentReactions[comment.id] ? (
+                            <span className="text-sm">{commentReactions[comment.id]}</span>
+                          ) : (
+                            <ThumbsUp className={`w-3.5 h-3.5 ${isLikedComment ? 'fill-current' : ''}`} />
+                          )}
+                          <span className="text-xs">{isLikedComment ? comment.likes + 1 : comment.likes}</span>
+                        </button>
+                      </div>
                       <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                         <ThumbsDown className="w-3.5 h-3.5" />
                       </button>
@@ -1397,6 +1554,30 @@ export default function VideoPlayerView() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Thanks Dialog */}
+      <Dialog open={showThanksDialog} onOpenChange={setShowThanksDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              Thanks
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mb-4">
+              <DollarSign className="w-8 h-8 text-white" />
+            </div>
+            <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">Thanks for your support!</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Your appreciation goes a long way in supporting creators.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Keyboard Shortcuts Dialog */}
+      {showKeyboardShortcuts && (
+        <KeyboardShortcutsDialog />
+      )}
     </div>
   );
 }

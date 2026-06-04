@@ -303,7 +303,7 @@ export default function YouTubeHeader() {
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#0f0f0f] z-50 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800 transition-shadow duration-200 ${isScrolled ? 'header-scrolled' : ''}`}>
+      <header className={`fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#0f0f0f] z-50 flex items-center justify-between px-4 border-b border-gray-200/80 dark:border-gray-800/80 transition-shadow duration-200 ${isScrolled ? 'header-scrolled' : ''}`}>
         {/* Left section */}
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <button
@@ -340,7 +340,7 @@ export default function YouTubeHeader() {
                   <path d="M84.1498 13.7036C84.1498 14.5259 84.1786 15.1519 84.234 15.5798C84.2895 16.0078 84.3992 16.3145 84.5619 16.4987C84.7246 16.6829 84.9722 16.775 85.3066 16.775C85.7555 16.775 86.0662 16.5857 86.2386 16.2072C86.4111 15.8287 86.5069 15.1886 86.5272 14.2866L89.0745 14.4359C89.0872 14.5688 89.0935 14.7544 89.0935 14.9916C89.0935 16.2498 88.7579 17.2002 88.0866 17.8427C87.4153 18.4852 86.4783 18.8064 85.2759 18.8064C83.8032 18.8064 82.7611 18.3087 82.1497 17.3134C81.5383 16.318 80.8325 14.7628 80.8325 12.6461V11.1903C80.8325 9.05782 81.5406 7.4861 82.1597 6.48735C82.7787 5.4886 83.8381 4.98923 85.3382 4.98923C86.337 4.98923 87.1045 5.19742 87.6426 5.6138C88.1807 6.03019 88.5549 6.65328 88.7651 7.4826C88.9754 8.31192 89.0822 9.40752 89.0822 10.7694V12.741H84.1498V13.7036ZM84.2773 8.15677C84.1215 8.4032 84.0247 8.7859 83.9844 9.30453C83.944 9.82315 83.9242 10.5644 83.9242 11.5274V12.4592H86.4715V11.5274C86.4715 10.5758 86.4517 9.83449 86.4113 9.30846C86.371 8.78244 86.2741 8.39715 86.1184 8.15536C85.9626 7.91358 85.7181 7.79233 85.3838 7.79233C85.0495 7.79233 84.8009 7.91034 84.6382 8.14635L84.2773 8.15677Z" fill={isDark ? '#f1f1f1' : '#282828'}/>
                 </g>
               </svg>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-0.5 -mt-2.5 font-roboto hidden sm:inline">PK</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-0.5 -mt-3 font-roboto hidden sm:inline">PK</span>
             </div>
           </div>
         </div>
@@ -348,7 +348,7 @@ export default function YouTubeHeader() {
         {/* Center section - Search bar (desktop) */}
         <div className={`hidden md:flex items-center flex-1 mx-4 relative transition-all duration-200 ${searchFocused ? 'max-w-[660px]' : 'max-w-[640px]'}`}>
           <form onSubmit={handleSearch} className="flex flex-1">
-            <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden transition-shadow ${searchFocused || showSuggestions ? 'border-[#1c62b9] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:border-[#1c62b9] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]' : 'border-[#ccc] dark:border-[#303030]'}`}>
+            <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden transition-shadow ${searchFocused || showSuggestions ? 'border-[#1c62b9] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] shadow-[0_1px_6px_rgba(28,98,185,0.15)] dark:border-[#1c62b9] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]' : 'border-[#ccc] dark:border-[#303030]'}`}>
               {searchFocused && !showSuggestions && (
                 <div className="pl-4">
                   <Search className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -389,7 +389,7 @@ export default function YouTubeHeader() {
             </div>
             <button
               type="submit"
-              className="h-10 px-5 bg-[#f8f8f8] dark:bg-[#222] hover:bg-[#e8e8e8] dark:hover:bg-[#3a3a3a] border border-l-0 border-[#ccc] dark:border-[#303030] rounded-r-[20px] transition-colors"
+              className="h-10 px-5 bg-[#f8f8f8] dark:bg-[#222] hover:bg-[#e8e8e8] dark:hover:bg-[#3a3a3a] border border-l-0 border-[#ccc] dark:border-[#303030] rounded-r-[20px] transition-colors flex items-center justify-center"
               aria-label="Search"
             >
               <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -494,7 +494,7 @@ export default function YouTubeHeader() {
               <button className={`${user ? 'flex' : 'hidden sm:flex'} p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors relative`} aria-label="Notifications">
                 <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 {unreadCount > 0 && (
-                  <span className={`absolute top-1 right-1 bg-red-600 text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center ${badgeBouncing ? 'animate-pulse-badge' : ''}`}>{unreadCount}</span>
+                  <span className={`absolute top-0.5 right-0.5 bg-red-600 text-white text-[10px] font-medium rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 ${badgeBouncing ? 'animate-pulse-badge' : ''}`}>{unreadCount}</span>
                 )}
               </button>
             </PopoverTrigger>
@@ -601,10 +601,10 @@ export default function YouTubeHeader() {
           ) : (
             <button
               onClick={toggleAuthDialog}
-              className="flex items-center gap-1.5 px-4 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 rounded-full text-[15px] font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] transition-all duration-200 ml-1"
+              className="flex items-center gap-1.5 px-4 py-1.5 border border-[#065fd4] text-[#065fd4] dark:text-[#3ea6ff] dark:border-[#3ea6ff] rounded-full text-sm font-medium bg-transparent hover:bg-[#def] dark:hover:bg-blue-900/20 transition-all duration-200 ml-1"
               aria-label="Sign in"
             >
-              <LogIn className="w-[18px] h-[18px]" />
+              <LogIn className="w-4 h-4" />
               Sign in
             </button>
           )}
