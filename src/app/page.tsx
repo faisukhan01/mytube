@@ -19,6 +19,7 @@ import {
   WatchLaterView,
   SubscriptionsView,
 } from '@/components/youtube/library-views';
+import KeyboardShortcutsDialog from '@/components/youtube/keyboard-shortcuts-dialog';
 
 export default function Home() {
   const { currentView, sidebarOpen, sidebarMini, checkSession } = useYouTubeStore();
@@ -97,6 +98,9 @@ export default function Home() {
 
       {/* Mini Player */}
       <MiniPlayer />
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog />
 
       {/* Footer - hidden in shorts and player view */}
       {currentView !== 'shorts' && currentView !== 'player' && (

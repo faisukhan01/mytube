@@ -42,6 +42,7 @@ interface YouTubeState {
   playlists: Playlist[];
   selectedPlaylistId: string | null;
   showPlaylistDialog: boolean;
+  watchProgress: Record<string, number>;
 
   // Actions
   setCurrentView: (view: ViewMode) => void;
@@ -74,6 +75,7 @@ interface YouTubeState {
   deletePlaylist: (playlistId: string) => void;
   openPlaylist: (playlistId: string) => void;
   setShowPlaylistDialog: (show: boolean) => void;
+  setWatchProgress: (videoId: string, progress: number) => void;
 
   // Auth actions
   setUser: (user: UserData | null) => void;
@@ -124,6 +126,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   playlists: [],
   selectedPlaylistId: null,
   showPlaylistDialog: false,
+  watchProgress: {},
 
   setCurrentView: (view) => {
     const state = get();
@@ -267,6 +270,12 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
       miniPlayerVideo: null,
     });
     get().addToHistory(video.id);
+
+    // Simulate watch progress after 3 seconds
+    setTimeout(() => {
+      const progress = Math.floor(Math.random() * 61) + 20; // 20-80%
+      get().setWatchProgress(video.id, progress);
+    }, 3000);
   },
 
   openShort: (index) => {
@@ -367,6 +376,20 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
 
   setShowPlaylistDialog: (show) => set({ showPlaylistDialog: show }),
 
+  setWatchProgress: (videoId, progress) => {
+    set((s) => {
+      const updated = { ...s.watchProgress, [videoId]: progress };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('yt-watch-progress', JSON.stringify(updated));
+        } catch {
+          // Silent fail
+        }
+      }
+      return { watchProgress: updated };
+    });
+  },
+
   // Auth actions
   setUser: (user) => set({ user }),
 
@@ -416,6 +439,18 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     }
     // Load playlists from localStorage regardless of auth
     const playlists = loadPlaylistsFromStorage();
-    set({ playlists });
+
+    // Load watch progress from localStorage
+    let watchProgress: Record<string, number> = {};
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('yt-watch-progress');
+        watchProgress = stored ? JSON.parse(stored) : {};
+      } catch {
+        watchProgress = {};
+      }
+    }
+
+    set({ playlists, watchProgress });
   },
 }));

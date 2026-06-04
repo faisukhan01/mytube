@@ -34,29 +34,36 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
 }
 
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
-  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel } = useYouTubeStore();
+  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isWatchLater = watchLater.includes(video.id);
   const isLiked = likedVideos.includes(video.id);
 
-  // Random watched progress (persisted in state per card)
-  const [watchedProgress] = useState(() => Math.random() < 0.3 ? Math.floor(Math.random() * 80) + 10 : 0);
+  // Get watch progress from store
+  const progress = watchProgress[video.id] || 0;
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    hoverTimeoutRef.current = setTimeout(() => {
-      setShowTooltip(true);
-    }, 600);
+    // Show enhanced preview after 1.5s for grid layout
+    if (layout === 'grid') {
+      previewTimeoutRef.current = setTimeout(() => {
+        setShowPreview(true);
+      }, 1500);
+    }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setShowTooltip(false);
+    setShowPreview(false);
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
+    }
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
     }
   };
 
@@ -147,11 +154,11 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               LIVE
             </span>
           )}
-          {/* Watched progress bar */}
-          {watchedProgress > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-400/30">
-              <div className="h-full bg-red-600 watched-progress" style={{ width: `${watchedProgress}%` }} />
-            </div>
+          {/* Watch progress bar */}
+          {progress > 0 ? (
+            <div className="absolute bottom-0 left-0 h-[3px] bg-red-600 rounded-r" style={{ width: `${progress}%` }} />
+          ) : (
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gray-200 dark:bg-gray-700" />
           )}
         </div>
 
@@ -262,20 +269,50 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <ListPlus className="w-4 h-4 text-white" />
           </button>
         </div>
-        {/* Watched progress bar */}
-        {watchedProgress > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-400/30">
-            <div className="h-full bg-red-600 watched-progress" style={{ width: `${watchedProgress}%` }} />
-          </div>
+        {/* Watch progress bar */}
+        {progress > 0 ? (
+          <div className="absolute bottom-0 left-0 h-[3px] bg-red-600 rounded-r" style={{ width: `${progress}%` }} />
+        ) : (
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gray-200 dark:bg-gray-700" />
         )}
       </div>
 
-      {/* Hover tooltip */}
-      {showTooltip && layout === 'grid' && (
-        <div className="absolute z-50 left-0 right-0 -bottom-2 translate-y-full pointer-events-none animate-scale-in">
-          <div className="bg-gray-900 dark:bg-[#3f3f3f] text-white rounded-lg px-3 py-2 shadow-xl text-xs">
-            <p className="font-medium line-clamp-1">{video.title}</p>
-            <p className="text-gray-300 mt-0.5">{video.channelTitle} • {video.duration}</p>
+      {/* Hover preview card (appears after 1.5s) */}
+      {showPreview && layout === 'grid' && (
+        <div className="absolute z-50 left-0 right-0 -bottom-2 translate-y-full pointer-events-none animate-fade-in">
+          <div className="bg-white dark:bg-[#282828] border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-2 text-sm">
+            {/* Mini thumbnail with play icon overlay */}
+            <div className="relative aspect-video rounded-md overflow-hidden mb-2">
+              {!imageError ? (
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
+              )}
+              {/* Play icon overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-10 h-10 rounded-full bg-black/70 flex items-center justify-center">
+                  <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                </div>
+              </div>
+              {/* Duration badge */}
+              <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[11px] font-medium px-1 py-0.5 rounded-[3px]">
+                {video.duration}
+              </span>
+            </div>
+            {/* Video info */}
+            <p className="font-semibold text-gray-900 dark:text-white line-clamp-2 text-[13px] leading-4">
+              {video.title}
+            </p>
+            <p className="text-[11px] text-[#606060] dark:text-[#aaa] mt-1">
+              {video.channelTitle}
+            </p>
+            <p className="text-[11px] text-[#606060] dark:text-[#aaa]">
+              {video.views} • {video.publishedAt}
+            </p>
           </div>
         </div>
       )}

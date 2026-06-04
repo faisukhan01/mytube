@@ -18,6 +18,9 @@ import {
   Clock,
   ListVideo,
   Plus,
+  Tag,
+  Shield,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -36,6 +39,77 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+// Helper function to format description text with clickable hashtags and URLs
+function formatDescriptionText(text: string): React.ReactNode[] {
+  const parts = text.split(/(\s+)/);
+  return parts.map((part, index) => {
+    // Check if it's a URL
+    const urlRegex = /^https?:\/\/[^\s]+$/;
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+
+    // Check if it contains a hashtag (#word)
+    const hashtagRegex = /^(#\S+)$/;
+    const hashtagMatch = part.match(hashtagRegex);
+    if (hashtagMatch) {
+      return (
+        <a
+          key={index}
+          href="#"
+          onClick={(e) => e.preventDefault()}
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {hashtagMatch[1]}
+        </a>
+      );
+    }
+
+    // Check if it contains a URL within text
+    const urlInTextRegex = /(https?:\/\/[^\s]+)/g;
+    const urlMatches = part.match(urlInTextRegex);
+    if (urlMatches) {
+      const elements: React.ReactNode[] = [];
+      let remaining = part;
+      urlMatches.forEach((url, i) => {
+        const idx = remaining.indexOf(url);
+        if (idx > 0) {
+          elements.push(remaining.substring(0, idx));
+        }
+        elements.push(
+          <a
+            key={`${index}-url-${i}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+          >
+            {url}
+          </a>
+        );
+        remaining = remaining.substring(idx + url.length);
+      });
+      if (remaining) {
+        elements.push(remaining);
+      }
+      return <span key={index}>{elements}</span>;
+    }
+
+    // Regular text
+    return part;
+  });
+}
 
 function RelatedVideoSkeleton() {
   return (
@@ -361,7 +435,7 @@ export default function VideoPlayerView() {
             <span>{currentVideo.publishedAt}</span>
           </div>
           <div className={`mt-2 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line ${!showFullDescription ? 'line-clamp-3' : ''}`}>
-            {currentVideo.description}
+            {formatDescriptionText(currentVideo.description)}
             {showFullDescription && (
               <>
                 {'\n\n'}
@@ -369,20 +443,57 @@ export default function VideoPlayerView() {
                 {'\n'}
                 {currentVideo.views} • {currentVideo.publishedAt}
                 {'\n\n'}
-                #{currentVideo.category.toLowerCase().replace(/\s+/g, '')} #{currentVideo.channelTitle.toLowerCase().replace(/\s+/g, '')}
+                <a href="#" onClick={(e) => e.preventDefault()} className="text-blue-600 dark:text-blue-400 hover:underline">#{currentVideo.category.toLowerCase().replace(/\s+/g, '')}</a>
+                {' '}
+                <a href="#" onClick={(e) => e.preventDefault()} className="text-blue-600 dark:text-blue-400 hover:underline">#{currentVideo.channelTitle.toLowerCase().replace(/\s+/g, '')}</a>
               </>
             )}
           </div>
-          <button
-            onClick={() => setShowFullDescription(!showFullDescription)}
-            className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-2 hover:text-gray-900 dark:hover:text-white"
-          >
-            {showFullDescription ? (
-              <>Show less <ChevronUp className="w-4 h-4" /></>
-            ) : (
-              <>Show more <ChevronDown className="w-4 h-4" /></>
-            )}
-          </button>
+          {!showFullDescription ? (
+            <button
+              onClick={() => setShowFullDescription(true)}
+              className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-2 hover:text-gray-900 dark:hover:text-white"
+            >
+              Show more <ChevronDown className="w-4 h-4" />
+            </button>
+          ) : (
+            <>
+              {/* Video metadata section */}
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Tag className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400">Category</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
+                    {currentVideo.category}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Shield className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400">License</span>
+                  <span className="text-gray-800 dark:text-gray-200">Standard YouTube License</span>
+                </div>
+                {currentVideo.channelTitle && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+                    <span className="text-gray-600 dark:text-gray-400">Source</span>
+                    <a
+                      href="#"
+                      onClick={(e) => e.preventDefault()}
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {currentVideo.channelTitle} (YouTube)
+                    </a>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setShowFullDescription(false)}
+                className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-3 hover:text-gray-900 dark:hover:text-white"
+              >
+                Show less <ChevronUp className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Comments section */}

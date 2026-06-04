@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useYouTubeStore } from '@/store/youtube-store';
+import { homeVideos, shortsVideos } from '@/lib/youtube-data';
 import {
   Menu,
   Search,
@@ -22,6 +23,7 @@ import {
   Check,
   Trash2,
   LogIn,
+  ArrowUpRight,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import AuthDialog from './auth-dialog';
+import UploadDialog from './upload-dialog';
 
 function getInitialDarkMode(): boolean {
   if (typeof window === 'undefined') return false;
@@ -122,16 +125,85 @@ export default function YouTubeHeader() {
   const [showSearch, setShowSearch] = useState(false);
   const [showVoiceSearch, setShowVoiceSearch] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isListening, setIsListening] = useState(true);
   const [notifications, setNotifications] = useState(sampleNotifications);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const mobileSuggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setInputValue(searchQuery);
   }, [searchQuery]);
+
+  // Build search suggestions from video data
+  const searchSuggestions = useMemo(() => {
+    if (!inputValue.trim()) return [];
+    const query = inputValue.trim().toLowerCase();
+    const seen = new Set<string>();
+    const suggestions: string[] = [];
+
+    // Combine all videos for suggestion matching
+    const allVideos = [...homeVideos, ...shortsVideos];
+
+    for (const video of allVideos) {
+      if (suggestions.length >= 8) break;
+      const titleLower = video.title.toLowerCase();
+      const channelLower = video.channelTitle.toLowerCase();
+
+      // Match by title containing the query
+      if (titleLower.includes(query) && !seen.has(video.title)) {
+        seen.add(video.title);
+        suggestions.push(video.title);
+      }
+    }
+
+    // Also match by channel name
+    if (suggestions.length < 8) {
+      for (const video of allVideos) {
+        if (suggestions.length >= 8) break;
+        const channelLower = video.channelTitle.toLowerCase();
+        if (channelLower.includes(query) && !seen.has(video.channelTitle)) {
+          seen.add(video.channelTitle);
+          suggestions.push(video.channelTitle);
+        }
+      }
+    }
+
+    return suggestions;
+  }, [inputValue]);
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Escape key to close suggestions
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowSuggestions(false);
+        searchInputRef.current?.blur();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Simulated voice search: after a short delay, show "recognized" text and allow search
   useEffect(() => {
@@ -160,7 +232,22 @@ export default function YouTubeHeader() {
     if (e) e.preventDefault();
     if (inputValue.trim()) {
       search(inputValue.trim());
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion);
+    search(suggestion);
+    setShowSuggestions(false);
+    searchInputRef.current?.blur();
+  };
+
+  const handleMobileSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion);
+    search(suggestion);
+    setShowSearch(false);
+    setShowSuggestions(false);
   };
 
   const handleLogoClick = () => {
@@ -230,10 +317,10 @@ export default function YouTubeHeader() {
         </div>
 
         {/* Center section - Search bar (desktop) */}
-        <div className="hidden md:flex items-center flex-1 max-w-[640px] mx-4">
+        <div className="hidden md:flex items-center flex-1 max-w-[640px] mx-4 relative">
           <form onSubmit={handleSearch} className="flex flex-1">
-            <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden ${searchFocused ? 'border-blue-500 shadow-inner dark:border-blue-500' : 'border-gray-300 dark:border-gray-700'}`}>
-              {searchFocused && (
+            <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden ${searchFocused || showSuggestions ? 'border-blue-500 shadow-inner dark:border-blue-500' : 'border-gray-300 dark:border-gray-700'}`}>
+              {searchFocused && !showSuggestions && (
                 <div className="pl-4">
                   <Search className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                 </div>
@@ -242,8 +329,14 @@ export default function YouTubeHeader() {
                 ref={searchInputRef}
                 type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => {
+                  setSearchFocused(true);
+                  if (inputValue.trim()) setShowSuggestions(true);
+                }}
                 onBlur={() => setSearchFocused(false)}
                 placeholder="Search"
                 className="w-full py-2 px-4 text-base outline-none bg-transparent placeholder-gray-500 dark:text-white dark:placeholder-gray-400 font-['Roboto',Arial,sans-serif]"
@@ -251,7 +344,11 @@ export default function YouTubeHeader() {
               {inputValue && (
                 <button
                   type="button"
-                  onClick={() => setInputValue('')}
+                  onClick={() => {
+                    setInputValue('');
+                    setShowSuggestions(false);
+                    searchInputRef.current?.focus();
+                  }}
                   className="px-3 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -277,6 +374,36 @@ export default function YouTubeHeader() {
           >
             <Mic className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
+
+          {/* Search Suggestions Dropdown */}
+          {showSuggestions && inputValue.trim() && (
+            <div
+              ref={suggestionsRef}
+              className="absolute top-full left-0 right-12 mt-1 bg-white dark:bg-[#222] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
+            >
+              {/* Search for input */}
+              <button
+                onClick={() => handleSearch()}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors text-left"
+              >
+                <Search className="w-4 h-4 text-gray-600 dark:text-gray-400 shrink-0" />
+                <span className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                  Search for <span className="font-medium">{inputValue.trim()}</span>
+                </span>
+              </button>
+              {/* Suggestion items */}
+              {searchSuggestions.map((suggestion, index) => (
+                <button
+                  key={`suggestion-${index}`}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-[#3f3f3f] transition-colors text-left"
+                >
+                  <ArrowUpRight className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
+                  <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{suggestion}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right section */}
@@ -310,7 +437,7 @@ export default function YouTubeHeader() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700">
-              <DropdownMenuItem className="cursor-pointer text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-[#3f3f3f]" onClick={() => toast.success('Upload video dialog would open')}>
+              <DropdownMenuItem className="cursor-pointer text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-[#3f3f3f]" onClick={() => setShowUploadDialog(true)}>
                 <Upload className="w-5 h-5 mr-3" />
                 Upload video
               </DropdownMenuItem>
@@ -451,11 +578,14 @@ export default function YouTubeHeader() {
       {/* Auth Dialog */}
       <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} />
 
+      {/* Upload Dialog */}
+      <UploadDialog open={showUploadDialog} onOpenChange={setShowUploadDialog} />
+
       {/* Mobile Search Overlay */}
       {showSearch && (
-        <div className="fixed inset-0 bg-white dark:bg-[#0f0f0f] z-[60] md:hidden">
-          <div className="flex items-center h-14 px-2 gap-2">
-            <button onClick={() => setShowSearch(false)} className="p-2">
+        <div className="fixed inset-0 bg-white dark:bg-[#0f0f0f] z-[60] md:hidden flex flex-col">
+          <div className="flex items-center h-14 px-2 gap-2 shrink-0">
+            <button onClick={() => { setShowSearch(false); setShowSuggestions(false); }} className="p-2">
               <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
             <form onSubmit={(e) => { handleSearch(e); setShowSearch(false); }} className="flex flex-1">
@@ -463,7 +593,13 @@ export default function YouTubeHeader() {
                 ref={mobileSearchRef}
                 type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => {
+                  if (inputValue.trim()) setShowSuggestions(true);
+                }}
                 placeholder="Search YouTube"
                 className="w-full py-2 px-2 text-base outline-none bg-transparent dark:text-white"
                 autoFocus
@@ -481,6 +617,35 @@ export default function YouTubeHeader() {
               <Mic className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
           </div>
+          {/* Mobile search suggestions */}
+          {showSuggestions && inputValue.trim() && (
+            <div
+              ref={mobileSuggestionsRef}
+              className="flex-1 overflow-y-auto bg-white dark:bg-[#0f0f0f]"
+            >
+              {/* Search for input */}
+              <button
+                onClick={() => { handleSearch(); setShowSearch(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors text-left"
+              >
+                <Search className="w-5 h-5 text-gray-600 dark:text-gray-400 shrink-0" />
+                <span className="text-sm text-gray-800 dark:text-gray-200 truncate">
+                  Search for <span className="font-medium">{inputValue.trim()}</span>
+                </span>
+              </button>
+              {/* Suggestion items */}
+              {searchSuggestions.map((suggestion, index) => (
+                <button
+                  key={`mobile-suggestion-${index}`}
+                  onClick={() => handleMobileSuggestionClick(suggestion)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors text-left"
+                >
+                  <ArrowUpRight className="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
+                  <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{suggestion}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

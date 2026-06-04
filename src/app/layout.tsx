@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${roboto.variable} antialiased bg-white`}
+        className={`${roboto.variable} antialiased bg-white dark:bg-[#0f0f0f]`}
         style={{ fontFamily: 'Roboto, Arial, sans-serif' }}
       >
         {children}
