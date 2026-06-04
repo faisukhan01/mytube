@@ -763,3 +763,226 @@ Unresolved Issues / Next Phase Priorities:
 - Could add live stream support with real-time chat
 - Could improve mobile responsive layout further
 - Could add algorithmic "Recommended for you" feed based on watch history
+
+---
+Task ID: 5b
+Agent: Styling Improvement Agent
+Task: Improve video cards, video grid, category chips, and shorts section styling
+
+Work Log:
+- Updated video-card.tsx:
+  - Made hover overlay more subtle: changed from `bg-black/5` to `bg-black/[0.03]` with `rounded-xl` for proper clipping
+  - Improved overlay button transitions: changed from `duration-200 translate-y-1` to `duration-300 ease-out translate-y-2` for smoother slide-in
+  - Added `hover:scale-105` and `transition-all duration-200` to Watch Later and Add to Queue overlay buttons
+  - Added `transition-colors duration-200` to Clock icon for smoother color transitions
+  - Added `video-card-hover` class to list layout card (was only on grid layout before)
+- Updated video-grid.tsx:
+  - Changed grid gap from `gap-y-8` to `gap-y-10` in all three grid instances (main grid, skeleton grid, dynamic skeleton grid) for better breathing room
+  - Updated "Load more" button styling to match YouTube's chip-style: `bg-[#f2f2f2] dark:bg-[#272727] text-[#0f0f0f] dark:text-[#f1f1f1]` with matching border and hover colors
+  - Changed load more section margin from `mt-8` to `mt-10` for consistent spacing
+- Updated category-chips.tsx:
+  - Changed inactive chip text colors from `text-gray-800 dark:text-gray-200` to `text-[#0f0f0f] dark:text-[#f1f1f1]` matching real YouTube
+  - Added explicit `h-8` (32px) and `flex items-center justify-center` to chip buttons for exact YouTube height
+  - Removed `py-1.5` padding in favor of `h-8` + `items-center` for consistent 32px height
+  - Changed bottom border from `border-gray-700` to `border-gray-800` for better dark mode appearance
+  - Updated scroll arrow hover states: changed from `hover:bg-gray-100 dark:hover:bg-[#272727]` to `hover:bg-gray-200 dark:hover:bg-[#3f3f3f]` with `duration-200` transition
+  - Changed arrow icon colors from `text-gray-700 dark:text-gray-300` to `text-gray-600 dark:text-gray-400` for subtler appearance
+- Updated shorts-section.tsx:
+  - Changed Shorts icon from YouTube Shorts path to simple play button triangle (`M8 5v14l11-7z`) for cleaner look
+  - Changed icon background from `bg-red-600 rounded` to `bg-red-500 rounded-md` matching YouTube's Shorts branding
+  - Added `font-bold tracking-tight` to "Shorts" title for better visual weight
+  - Changed "Show more" link to YouTube blue: `text-[#065fd4] dark:text-[#3ea6ff]` with matching hover states
+  - Replaced VideoCard component usage with inline shorts card rendering for better control
+  - Set shorts card width to `w-[180px]` with proper `aspect-[9/16]`
+  - Added hover effects: `group-hover/short:scale-[1.02]` and `group-hover/short:brightness-95 dark:group-hover/short:brightness-110`
+  - Removed unused `VideoCard` import after switching to inline rendering
+- All lint checks pass with zero errors
+- Dev server compiles successfully
+
+Stage Summary:
+- Video card hover overlay is now more subtle (3% opacity instead of 5%)
+- Overlay buttons have smoother slide-in transitions (300ms ease-out from 200ms)
+- List layout cards now have `video-card-hover` class for consistent hover shadow
+- Video grid has better vertical spacing (gap-y-10 instead of gap-y-8)
+- Load more button styled like YouTube's chip buttons with correct colors
+- Category chips are exactly 32px tall matching real YouTube
+- Inactive chip text uses correct YouTube colors (#0f0f0f / #f1f1f1)
+- Scroll arrows have improved hover states and subtler colors
+- Shorts section has cleaner icon, proper 180px width, and YouTube blue "Show more" link
+- Shorts cards have subtle scale-up and brightness hover effects
+
+---
+Task ID: 5a
+Agent: Header & Video Player Polish Agent
+Task: Fix header styling and video player view improvements
+
+Work Log:
+- Updated header.tsx search bar styling:
+  - Search input height changed to h-10 (40px like real YouTube)
+  - Border colors changed to border-[#ccc] dark:border-[#303030] (subtle like real YouTube)
+  - Focus state uses border-[#1c62b9] with subtle inset shadow (YouTube blue)
+  - Search button background changed to bg-[#f8f8f8] dark:bg-[#222]
+  - Search button border matches input border colors
+  - Voice search button padding increased from p-2.5 to p-3 (slightly larger)
+  - Clear button (X) now has a vertical divider line next to it (w-px h-6 bg-[#ccc]/bg-[#303030])
+- Updated header.tsx right section:
+  - Theme toggle (Sun/Moon) now hidden on mobile with hidden md:flex
+  - Create button uses larger p-2.5 padding and w-6 h-6 icon size
+  - Notification bell hover changed to hover:bg-gray-200 dark:hover:bg-gray-700 for more visible hover state
+  - Sign in button font size increased to text-[15px], padding increased to px-4, icon size w-[18px] h-[18px]
+- Updated video-player-view.tsx:
+  - Like/dislike separator changed from shadcn Separator component to a clean div (w-px h-6)
+  - Like button gets rounded-l-full, dislike gets rounded-r-full for cleaner pill shape
+  - Like/dislike padding adjusted to pl-4 pr-2.5 and pl-2.5 pr-4 respectively
+  - "..." more options button now wraps in DropdownMenu with Report and Show transcript options
+  - Description section now has hover effect and click-to-expand (cursor-pointer, hover:bg-gray-200/70 dark:hover:bg-[#303030])
+  - "Show more" changed to "...more" text (like real YouTube), with stopPropagation
+  - "Show less" text only (no ChevronUp icon, cleaner like real YouTube)
+  - Comment thumbs up/down icons changed to w-3.5 h-3.5 (main) and w-3 h-3 (replies)
+  - Comment avatar font size set to text-[13px] (matching YouTube's avatar text)
+  - Reply avatars enlarged from w-6 h-6 to w-7 h-7
+  - Removed unused Separator import from video-player-view.tsx
+- All lint checks pass with zero errors
+- App compiles successfully
+
+Stage Summary:
+- Search bar now matches real YouTube with 40px height, #ccc borders, #1c62b9 focus blue, #f8f8f8 button bg, and clear button with divider
+- Header right section improved: theme toggle hidden on mobile, larger create button, more visible bell hover, larger sign-in button
+- Like/dislike buttons have cleaner separator with rounded pill edges
+- "..." button now has a dropdown menu with Report and Transcript options
+- Description section is more interactive with hover effect and click-to-expand
+- Comment section icons are properly sized like real YouTube
+- Zero lint errors, all changes compile successfully
+
+---
+Task ID: 5c
+Agent: UX Enhancement Agent
+Task: Add new features and improve UX - LIVE badge, NEW badge, trending improvements, filter dropdown, search improvements
+
+Work Log:
+- Updated video-card.tsx: Added LIVE badge with pulsing dot to list layout
+  - List layout LIVE badge now has bg-red-600, text-white, pulsing white dot (animate-pulse), positioned top-left of thumbnail
+  - Matches the grid layout LIVE badge style exactly
+  - Duration badge no longer shows "LIVE" text when video is live (only the LIVE badge shows)
+- Updated video-card.tsx: Added "Recently uploaded" NEW badge
+  - Added isRecentlyUploaded check based on publishedAt containing "hours ago", "days ago", "weeks ago" (not "months ago" or "years ago")
+  - NEW badge appears as green pill with green dot indicator next to video title in both list and grid layouts
+  - Styled: bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 with rounded-full and green dot
+- Rewrote trending-view.tsx with comprehensive improvements
+  - Larger ranking numbers (text-lg font-bold instead of text-2xl font-light)
+  - Trending header with larger flame icon (12x12 circle) and description
+  - Tabs styled like YouTube with underline indicator (3px bottom border, rounded-full, positioned absolutely)
+  - Channel avatars next to each trending video (6x6 circle with channel color and initial)
+  - Hover effects on video rows (hover:bg-gray-100 dark:hover:bg-[#272727], transition-colors)
+  - Context menu dropdown (Play, Add to Watch later, Add to queue) on hover
+  - Category badges positioned alongside dropdown menu
+- Updated video-grid.tsx: Added sort/filter dropdown
+  - Added shadcn Select component with ArrowUpDown icon
+  - Sort options: Relevance (default), Upload date, View count
+  - Client-side sorting with parseViews helper (handles B/M/K suffixes) and parseTimeAgo helper (handles hours/days/weeks/months/years)
+  - Positioned above video grid alongside category heading
+  - Styled with YouTube colors (bg-[#f2f2f2] dark:bg-[#272727], no border, hover states)
+- Rewrote search-results.tsx with comprehensive improvements
+  - Better filter buttons with icons: All (Search icon), Videos (Play icon), Channels (Eye icon), Playlists (Clock icon)
+  - Filter separator line between Filters button and filter options
+  - Larger thumbnail skeleton in loading state (246x138 instead of 168x94)
+  - "Search instead for" suggestion when results are limited (modifies query by removing last word or adding "official")
+  - Channel results view when "Channels" filter selected (large avatars with video counts)
+  - Improved skeleton layout matching actual search result structure
+  - All filter buttons have YouTube-style active/inactive states
+- All lint checks pass with zero errors
+
+Stage Summary:
+- LIVE badge with pulsing dot now appears in both list and grid layouts on video cards
+- NEW badge appears on recently uploaded videos (less than 1 month old) with green dot indicator
+- Trending view has larger numbers, YouTube-style tab underlines, channel avatars, hover effects, and dropdown menus
+- Video grid has sort/filter dropdown with Relevance/Upload date/View count options
+- Search results have improved filter buttons with icons, channel results view, "Search instead for" suggestions, and better loading skeletons
+- Zero lint errors
+
+---
+Task ID: 6
+Agent: Final Visual Polish Agent
+Task: Final visual polish improvements based on VLM QA feedback (rated 7/10)
+
+Work Log:
+- Updated sidebar.tsx: Replaced PlaySquare icon with custom ShortsIcon SVG (red rounded square with white play button, matching YouTube Shorts branding)
+- Updated sidebar.tsx: Replaced ListVideo icon with Users icon for Subscriptions (more intuitive for channel subscriptions)
+- Updated sidebar.tsx: Added YouTube Music item (Music2 icon, red colored) and YouTube Kids item (Baby icon, red colored) in new "More from YouTube" section
+- Updated sidebar.tsx: Separated "More from YouTube" section (YouTube Premium, YouTube Music, YouTube Kids with red icons) from Settings/Help section
+- Updated sidebar.tsx: Removed unused PlaySquare and ListVideo imports, added Users and Baby imports from lucide-react
+- Updated video-card.tsx: Added object-center class to all thumbnail img tags for better cropping of 4:3 thumbnails in 16:9 containers
+- Updated video-card.tsx: Added fallbackAttempted state to prevent infinite retry loops
+- Updated video-card.tsx: Enhanced onError handler to try mqdefault.jpg fallback before showing FallbackThumbnail (all 3 layouts: shorts, list, grid)
+- Updated category-chips.tsx: Changed active chip background from bg-black to bg-[#0f0f0f] for a more subtle look in light mode
+- Updated category-chips.tsx: Changed active chip hover to bg-[#272727] for light mode consistency
+- Updated category-chips.tsx: Removed chip-active-underline span element (real YouTube doesn't have underline indicator on active chips)
+- Updated category-chips.tsx: Removed relative positioning from chip button class (no longer needed without underline)
+- Updated globals.css: Removed chip-active-underline CSS class and chipUnderline keyframe animation (no longer used)
+- Mini sidebar Shorts icon automatically uses the same custom ShortsIcon SVG since it iterates over mainItems
+- All lint checks pass with zero errors
+
+Stage Summary:
+- Sidebar icons are now more YouTube-like: custom red Shorts icon, Users for Subscriptions, YouTube Music & Kids items
+- Thumbnails crop better with object-center and gracefully fallback from hqdefault.jpg to mqdefault.jpg
+- Category chips are more subtle: bg-[#0f0f0f] active, no underline indicator (matching real YouTube)
+- Mini sidebar uses the same custom Shorts icon as expanded sidebar
+- Zero lint errors, no console errors, no server errors
+
+---
+Task ID: Session 4 - Comprehensive QA, Bug Fixes & Feature Enhancement
+Agent: Main Agent
+Task: Assess project status, perform QA via agent-browser, fix bugs, add features, improve styling
+
+Work Log:
+- Assessed project status by reading worklog.md and running agent-browser QA
+- VLM analysis rated the project 3/10 initially, identified critical styling issues
+- Fixed critical CSS bug: `.group:hover` shadow was too broad (applied to ALL group elements including sidebar), changed to `.video-card-hover:hover`
+- Fixed Roboto font loading: Changed CSS variable from `--font-geist-sans` to `--font-roboto` in layout.tsx and globals.css
+- Added YouTube logo to sidebar top (matching real YouTube's sidebar layout)
+- Fixed sidebar logo SVG to use `currentColor` for dark mode support instead of hardcoded `#282828`
+- Delegated 3 parallel subagent tasks:
+  - Task 5a: Fixed header search bar (40px height, subtle borders, blue focus state), improved video player view (like/dislike separator, more options menu, description expand/collapse)
+  - Task 5b: Improved video cards (subtle hover overlay, smoother transitions, video-card-hover on list layout), video grid (gap-y-10, better load more button), category chips (32px height, better colors), shorts section (red play button icon, 180px cards, hover effects)
+  - Task 5c: Added LIVE badge in list layout, NEW badge for recently uploaded videos, improved trending view (header, tabs with underline, channel avatars, dropdown menus), added sort/filter dropdown to video grid, improved search results (filter buttons, channel results, "Search instead for" suggestion)
+- Delegated Task 6: Final polish - custom Shorts SVG icon, YouTube Music & Kids in sidebar, thumbnail fallback from hqdefault.jpg to mqdefault.jpg, removed chip underline indicator, cleaned up unused CSS
+- VLM analysis after all fixes: rated 7/10 (up from 3/10)
+- All lint checks pass with zero errors
+- All key features tested via agent-browser: search, video playback, shorts, trending, navigation, dark mode
+
+Stage Summary:
+- YouTube clone rated 7/10 for realism (up from 3/10 at start of session)
+- Major styling improvements across all components
+- Fixed critical CSS bugs (broad hover shadow, font variable)
+- Added YouTube logo to sidebar top
+- Custom Shorts icon matching YouTube's branding
+- YouTube Music and YouTube Kids added to sidebar
+- Improved header search bar with YouTube-accurate styling
+- Video grid spacing improved (gap-y-10)
+- Category chips refined (32px height, subtle active state, no underline)
+- NEW badge for recently uploaded videos
+- LIVE badge in list layout with pulsing animation
+- Sort/filter dropdown added to video grid
+- Search results enhanced with filter tabs and channel results
+- Trending view improved with header, tabs, avatars, menus
+- Thumbnail quality improved with fallback mechanism
+- Dark mode fully supported across all components
+- Zero lint errors, no console errors, no server errors
+
+Current Project Status:
+- Stable and visually polished YouTube clone
+- All core features working: video playback, search, Shorts, trending, auth, playlists, mini player, dark mode
+- 351+ videos with real YouTube thumbnails and embeds
+- Dynamic video discovery via web search API
+- Infinite scroll with load-more for video grid
+- User authentication with separate data/history
+- All interactive elements functional
+
+Unresolved Issues / Next Phase Priorities:
+- Font could be even closer to YouTube's Google Sans/Roboto
+- Some thumbnails may still show low resolution due to YouTube CDN limitations
+- Could add more responsive mobile layout improvements
+- Could add real-time notification updates
+- Could add video upload simulation with drag-and-drop
+- Could add YouTube Stories feature
+- Could add community/posts tab on channel pages

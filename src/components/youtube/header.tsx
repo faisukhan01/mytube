@@ -319,7 +319,7 @@ export default function YouTubeHeader() {
         {/* Center section - Search bar (desktop) */}
         <div className="hidden md:flex items-center flex-1 max-w-[640px] mx-4 relative">
           <form onSubmit={handleSearch} className="flex flex-1">
-            <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden ${searchFocused || showSuggestions ? 'border-blue-500 shadow-inner dark:border-blue-500' : 'border-gray-300 dark:border-gray-700'}`}>
+            <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden transition-shadow ${searchFocused || showSuggestions ? 'border-[#1c62b9] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:border-[#1c62b9] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]' : 'border-[#ccc] dark:border-[#303030]'}`}>
               {searchFocused && !showSuggestions && (
                 <div className="pl-4">
                   <Search className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -339,25 +339,28 @@ export default function YouTubeHeader() {
                 }}
                 onBlur={() => setSearchFocused(false)}
                 placeholder="Search"
-                className="w-full py-2 px-4 text-base outline-none bg-transparent placeholder-gray-500 dark:text-white dark:placeholder-gray-400 font-['Roboto',Arial,sans-serif]"
+                className="w-full h-10 px-4 text-base outline-none bg-transparent placeholder-gray-500 dark:text-white dark:placeholder-gray-400 font-['Roboto',Arial,sans-serif]"
               />
               {inputValue && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputValue('');
-                    setShowSuggestions(false);
-                    searchInputRef.current?.focus();
-                  }}
-                  className="px-3 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                </button>
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInputValue('');
+                      setShowSuggestions(false);
+                      searchInputRef.current?.focus();
+                    }}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  </button>
+                  <div className="w-px h-6 bg-[#ccc] dark:bg-[#303030]" />
+                </div>
               )}
             </div>
             <button
               type="submit"
-              className="px-5 py-2 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] border border-l-0 border-gray-300 dark:border-gray-700 rounded-r-[20px] transition-colors"
+              className="h-10 px-5 bg-[#f8f8f8] dark:bg-[#222] hover:bg-[#e8e8e8] dark:hover:bg-[#3a3a3a] border border-l-0 border-[#ccc] dark:border-[#303030] rounded-r-[20px] transition-colors"
               aria-label="Search"
             >
               <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -369,7 +372,7 @@ export default function YouTubeHeader() {
               setIsListening(true);
               setVoiceText('');
             }}
-            className="ml-3 p-2.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors"
+            className="ml-3 p-3 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors"
             aria-label="Voice search"
           >
             <Mic className="w-5 h-5 text-gray-700 dark:text-gray-300" />
@@ -408,10 +411,10 @@ export default function YouTubeHeader() {
 
         {/* Right section */}
         <div className="flex items-center gap-1">
-          {/* Theme toggle */}
+          {/* Theme toggle - hidden on mobile */}
           <button
             onClick={toggleTheme}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+            className="hidden md:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? (
@@ -432,8 +435,8 @@ export default function YouTubeHeader() {
           {/* Create dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" aria-label="Create">
-                <Video className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <button className="hidden sm:flex items-center justify-center p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" aria-label="Create">
+                <Video className="w-6 h-6 text-gray-700 dark:text-gray-300" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700">
@@ -455,7 +458,7 @@ export default function YouTubeHeader() {
           {/* Notifications popover */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative" aria-label="Notifications">
+              <button className="hidden sm:flex p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors relative" aria-label="Notifications">
                 <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center">{unreadCount}</span>
@@ -565,10 +568,10 @@ export default function YouTubeHeader() {
           ) : (
             <button
               onClick={toggleAuthDialog}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 rounded-full text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors ml-1"
+              className="flex items-center gap-1.5 px-4 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 rounded-full text-[15px] font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors ml-1"
               aria-label="Sign in"
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="w-[18px] h-[18px]" />
               Sign in
             </button>
           )}

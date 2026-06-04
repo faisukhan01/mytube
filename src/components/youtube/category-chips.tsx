@@ -45,16 +45,16 @@ export default function CategoryChips() {
   };
 
   return (
-    <div className="sticky top-14 z-30 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-700">
+    <div className="sticky top-14 z-30 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-800">
       <div className="relative flex items-center h-12">
         {/* Left arrow with enhanced gradient fade */}
         {showLeftArrow && (
           <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white dark:from-[#0f0f0f] via-white/95 dark:via-[#0f0f0f]/95 to-transparent pr-8">
             <button
               onClick={() => scroll('left')}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full transition-all duration-150 active:scale-95"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all duration-200 active:scale-95"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         )}
@@ -73,17 +73,13 @@ export default function CategoryChips() {
               <button
                 key={category}
                 onClick={() => handleChipClick(category)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 relative ${
+                className={`shrink-0 px-3 rounded-full text-sm font-medium transition-all duration-200 h-8 flex items-center justify-center ${
                   isActive
-                    ? 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
-                    : 'bg-[#f2f2f2] dark:bg-[#272727] text-gray-800 dark:text-gray-200 hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]'
+                    ? 'bg-[#0f0f0f] text-white dark:bg-white dark:text-black hover:bg-[#272727] dark:hover:bg-gray-200'
+                    : 'bg-[#f2f2f2] text-[#0f0f0f] dark:bg-[#272727] dark:text-[#f1f1f1] hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]'
                 } ${isAnimating ? 'animate-bounce-in' : ''}`}
               >
                 {category}
-                {/* Active underline indicator */}
-                {isActive && (
-                  <span className="absolute -bottom-[5px] left-[20%] right-[20%] h-[3px] bg-gray-900 dark:bg-white rounded-full chip-active-underline" />
-                )}
               </button>
             );
           })}
@@ -94,9 +90,9 @@ export default function CategoryChips() {
           <div className="absolute right-0 z-10 flex items-center h-full bg-gradient-to-l from-white dark:from-[#0f0f0f] via-white/95 dark:via-[#0f0f0f]/95 to-transparent pl-8">
             <button
               onClick={() => scroll('right')}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full transition-all duration-150 active:scale-95"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all duration-200 active:scale-95"
             >
-              <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         )}

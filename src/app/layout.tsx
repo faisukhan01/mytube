@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
 const roboto = Roboto({
-  variable: "--font-geist-sans",
+  variable: "--font-roboto",
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
 });
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${roboto.variable} antialiased bg-white dark:bg-[#0f0f0f]`}
+        className={`${roboto.variable} antialiased`}
         style={{ fontFamily: 'Roboto, Arial, sans-serif' }}
       >
         {children}

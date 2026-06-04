@@ -23,7 +23,6 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -314,20 +313,20 @@ export default function VideoPlayerView() {
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Like/Dislike */}
-            <div className="flex items-center bg-gray-100 dark:bg-[#272727] rounded-full overflow-hidden">
+            <div className="flex items-center bg-gray-100 dark:bg-[#272727] rounded-full">
               <button
                 onClick={() => toggleLike(currentVideo.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] transition-colors ${
+                className={`flex items-center gap-1.5 pl-4 pr-2.5 py-2 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] transition-colors rounded-l-full ${
                   isLiked ? 'text-blue-600' : 'text-gray-800 dark:text-gray-200'
                 }`}
               >
                 <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
                 <span className="text-sm font-medium">{currentVideo.likes || '0'}</span>
               </button>
-              <Separator orientation="vertical" className="h-6 bg-gray-300 dark:bg-gray-600" />
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
               <button
                 onClick={handleDislike}
-                className={`flex items-center px-4 py-2 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] transition-colors ${
+                className={`flex items-center pl-2.5 pr-4 py-2 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] transition-colors rounded-r-full ${
                   isDisliked ? 'text-blue-600' : 'text-gray-800 dark:text-gray-200'
                 }`}
               >
@@ -422,14 +421,28 @@ export default function VideoPlayerView() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <button className="p-2 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors">
-              <MoreHorizontal className="w-5 h-5 text-gray-800 dark:text-gray-200" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors">
+                  <MoreHorizontal className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => toast.success('Report submitted')}>
+                  <Shield className="w-4 h-4 mr-2" />
+                  Report
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => toast.success('Transcript opening...')}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Show transcript
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Description */}
-        <div className="mt-4 bg-gray-100 dark:bg-[#272727] rounded-xl p-3">
+        <div className="mt-4 bg-gray-100 dark:bg-[#272727] rounded-xl p-3 cursor-pointer hover:bg-gray-200/70 dark:hover:bg-[#303030] transition-colors" onClick={() => !showFullDescription && setShowFullDescription(true)}>
           <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
             <span>{currentVideo.views}</span>
             <span>{currentVideo.publishedAt}</span>
@@ -451,10 +464,10 @@ export default function VideoPlayerView() {
           </div>
           {!showFullDescription ? (
             <button
-              onClick={() => setShowFullDescription(true)}
+              onClick={(e) => { e.stopPropagation(); setShowFullDescription(true); }}
               className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-2 hover:text-gray-900 dark:hover:text-white"
             >
-              Show more <ChevronDown className="w-4 h-4" />
+              ...more
             </button>
           ) : (
             <>
@@ -490,7 +503,7 @@ export default function VideoPlayerView() {
                 onClick={() => setShowFullDescription(false)}
                 className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-3 hover:text-gray-900 dark:hover:text-white"
               >
-                Show less <ChevronUp className="w-4 h-4" />
+                Show less
               </button>
             </>
           )}
@@ -571,7 +584,7 @@ export default function VideoPlayerView() {
 
               return (
                 <div key={comment.id} className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0"
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-[13px] shrink-0"
                     style={{ backgroundColor: comment.authorInitial === 'T' ? '#2196F3' : comment.authorInitial === 'D' ? '#FF9800' : comment.authorInitial === 'C' ? '#4CAF50' : comment.authorInitial === 'U' ? '#9C27B0' : '#9C27B0' }}
                   >
                     {comment.authorInitial}
@@ -584,11 +597,11 @@ export default function VideoPlayerView() {
                     <p className="text-sm text-gray-800 dark:text-gray-300 mt-0.5">{comment.text}</p>
                     <div className="flex items-center gap-4 mt-1.5">
                       <button className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                        <ThumbsUp className="w-4 h-4" />
+                        <ThumbsUp className="w-3.5 h-3.5" />
                         <span className="text-xs">{comment.likes}</span>
                       </button>
                       <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                        <ThumbsDown className="w-4 h-4" />
+                        <ThumbsDown className="w-3.5 h-3.5" />
                       </button>
                       <button className="text-xs text-gray-600 dark:text-gray-400 font-medium hover:text-gray-900 dark:hover:text-white">
                         Reply
@@ -613,7 +626,7 @@ export default function VideoPlayerView() {
                           <div className="mt-2 space-y-4">
                             {comment.replies!.map((reply) => (
                               <div key={reply.id} className="flex gap-3">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-[10px] shrink-0"
+                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-medium text-[10px] shrink-0"
                                   style={{ backgroundColor: '#607D8B' }}
                                 >
                                   {reply.authorInitial}
@@ -626,11 +639,11 @@ export default function VideoPlayerView() {
                                   <p className="text-sm text-gray-800 dark:text-gray-300 mt-0.5">{reply.text}</p>
                                   <div className="flex items-center gap-4 mt-1">
                                     <button className="flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                                      <ThumbsUp className="w-3.5 h-3.5" />
+                                      <ThumbsUp className="w-3 h-3" />
                                       <span className="text-xs">{reply.likes}</span>
                                     </button>
                                     <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                                      <ThumbsDown className="w-3.5 h-3.5" />
+                                      <ThumbsDown className="w-3 h-3" />
                                     </button>
                                   </div>
                                 </div>

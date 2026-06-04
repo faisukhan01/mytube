@@ -5,8 +5,9 @@ import { getVideosByCategory } from '@/lib/youtube-data';
 import type { Video } from '@/lib/youtube-data';
 import VideoCard from './video-card';
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function VideoCardSkeleton() {
   return (
@@ -35,7 +36,7 @@ function VideoCardSkeleton() {
 
 function VideoGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className={`stagger-${Math.min(i + 1, 8)}`}>
           <VideoCardSkeleton />
@@ -77,6 +78,7 @@ export default function VideoGrid() {
   const [hasMoreDynamic, setHasMoreDynamic] = useState(true);
   const [dynamicPage, setDynamicPage] = useState(0);
   const [dynamicError, setDynamicError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState('relevance');
 
   // Ref for intersection observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -85,6 +87,30 @@ export default function VideoGrid() {
   const localVideos = useMemo(() => {
     return getVideosByCategory(selectedCategory);
   }, [selectedCategory]);
+
+  // Helper to parse view count for sorting
+  const parseViews = (views: string): number => {
+    const match = views.match(/[\d.]+/);
+    if (!match) return 0;
+    const num = parseFloat(match[0]);
+    if (views.toLowerCase().includes('b')) return num * 1_000_000_000;
+    if (views.toLowerCase().includes('m')) return num * 1_000_000;
+    if (views.toLowerCase().includes('k')) return num * 1_000;
+    return num;
+  };
+
+  // Helper to parse time ago for sorting
+  const parseTimeAgo = (publishedAt: string): number => {
+    const t = publishedAt.toLowerCase();
+    const match = t.match(/(\d+)/);
+    const num = match ? parseInt(match[1]) : 1;
+    if (t.includes('hour')) return num;
+    if (t.includes('day')) return num * 24;
+    if (t.includes('week')) return num * 168;
+    if (t.includes('month')) return num * 720;
+    if (t.includes('year')) return num * 8760;
+    return 999999;
+  };
 
   // Combine local + dynamic videos (deduplicated)
   const allVideos = useMemo(() => {
@@ -103,8 +129,18 @@ export default function VideoGrid() {
         combined.push(v);
       }
     }
-    return combined;
-  }, [localVideos, dynamicVideos]);
+
+    // Sort based on selected option
+    const sorted = [...combined];
+    if (sortBy === 'upload_date') {
+      sorted.sort((a, b) => parseTimeAgo(a.publishedAt) - parseTimeAgo(b.publishedAt));
+    } else if (sortBy === 'view_count') {
+      sorted.sort((a, b) => parseViews(b.views) - parseViews(a.views));
+    }
+    // 'relevance' keeps original order
+
+    return sorted;
+  }, [localVideos, dynamicVideos, sortBy]);
 
   // Fetch dynamic videos for a category
   const fetchDynamicVideos = useCallback(async (category: string, page: number) => {
@@ -231,13 +267,30 @@ export default function VideoGrid() {
 
   return (
     <div className="p-4 md:p-6 page-transition" key={selectedCategory}>
-      {/* Category heading */}
-      {selectedCategory !== 'All' && (
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 animate-fade-in">{selectedCategory}</h2>
-      )}
+      {/* Category heading + Sort dropdown */}
+      <div className="flex items-center justify-between mb-4">
+        {selectedCategory !== 'All' ? (
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white animate-fade-in">{selectedCategory}</h2>
+        ) : (
+          <div />
+        )}
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px] h-8 text-[13px] bg-[#f2f2f2] dark:bg-[#272727] border-0 hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="relevance">Relevance</SelectItem>
+              <SelectItem value="upload_date">Upload date</SelectItem>
+              <SelectItem value="view_count">View count</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Video grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">
         {allVideos.map((video, index) => (
           <div key={`${video.id}-${index}`} className={`stagger-${Math.min((index % 8) + 1, 8)} animate-slide-up`}>
             <VideoCard video={video} layout="grid" />
@@ -254,7 +307,7 @@ export default function VideoGrid() {
               Loading more {dynamicCategoryLabels[selectedCategory] || 'videos'}...
             </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={`dyn-skel-${i}`} className={`stagger-${Math.min(i + 1, 8)}`}>
                 <VideoCardSkeleton />
@@ -266,7 +319,7 @@ export default function VideoGrid() {
 
       {/* Load More section with IntersectionObserver sentinel */}
       {selectedCategory !== 'All' && allVideos.length > 0 && (
-        <div className="mt-8 flex flex-col items-center gap-4">
+        <div className="mt-10 flex flex-col items-center gap-4">
           {/* Error message */}
           {dynamicError && (
             <p className="text-sm text-red-500 dark:text-red-400">{dynamicError}</p>
@@ -278,7 +331,7 @@ export default function VideoGrid() {
               variant="outline"
               onClick={loadMore}
               disabled={isLoadingMore}
-              className="flex items-center gap-2 rounded-full px-6 py-2 text-sm font-medium border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] transition-all duration-200"
+              className="flex items-center gap-2 rounded-full px-6 py-2 text-sm font-medium border border-gray-300 dark:border-[#3f3f3f] text-[#0f0f0f] dark:text-[#f1f1f1] bg-[#f2f2f2] dark:bg-[#272727] hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f] transition-all duration-200"
             >
               {isLoadingMore ? (
                 <>

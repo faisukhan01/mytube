@@ -1,9 +1,16 @@
 'use client';
 
 import { homeVideos } from '@/lib/youtube-data';
-import VideoCard from './video-card';
-import { Flame, Music, Gamepad2, Film } from 'lucide-react';
+import { useYouTubeStore } from '@/store/youtube-store';
+import { Flame, Music, Gamepad2, Film, Play, Clock, ListPlus, MoreVertical } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 const trendingTabs = [
   { id: 'now', label: 'Now', icon: Flame },
@@ -33,6 +40,7 @@ const categoryColors: Record<string, string> = {
 
 export default function TrendingView() {
   const [activeTab, setActiveTab] = useState('now');
+  const { openVideo, openChannel, toggleWatchLater, watchLater } = useYouTubeStore();
 
   const trendingVideos = useMemo(() => {
     if (activeTab === 'now') return homeVideos.slice(0, 20);
@@ -44,9 +52,10 @@ export default function TrendingView() {
 
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
+      {/* Trending header with flame icon and description */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
-          <Flame className="w-6 h-6 text-white" />
+        <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
+          <Flame className="w-7 h-7 text-white" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Trending</h1>
@@ -54,45 +63,137 @@ export default function TrendingView() {
         </div>
       </div>
 
-      {/* Trending tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 pb-0">
-        {trendingTabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                isActive
-                  ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Trending tabs with underline indicator */}
+      <div className="relative mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex">
+          {trendingTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                {/* Underline indicator */}
+                {isActive && (
+                  <span className="absolute bottom-0 left-2 right-2 h-[3px] bg-gray-900 dark:bg-white rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="space-y-2">
-        {trendingVideos.map((video, index) => (
-          <div key={video.id} className="flex gap-4">
-            <span className="text-2xl font-light text-gray-400 dark:text-gray-500 w-8 shrink-0 pt-1 text-right">
-              {index + 1}
-            </span>
-            <div className="flex-1 relative">
-              <VideoCard video={video} layout="list" />
-              {/* Category badge */}
-              {video.category && categoryColors[video.category] && (
-                <span className={`absolute top-3 right-10 text-[10px] font-medium px-1.5 py-0.5 rounded ${categoryColors[video.category]}`}>
-                  {video.category}
-                </span>
-              )}
+      {/* Trending video list */}
+      <div className="space-y-1">
+        {trendingVideos.map((video, index) => {
+          const isWatchLater = watchLater.includes(video.id);
+          return (
+            <div
+              key={video.id}
+              className="flex gap-4 items-start group rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150 px-2 py-2 cursor-pointer"
+              onClick={() => openVideo(video)}
+            >
+              {/* Large ranking number */}
+              <span className="text-lg font-bold text-gray-400 dark:text-gray-500 w-8 shrink-0 pt-3 text-right select-none">
+                {index + 1}
+              </span>
+
+              {/* Thumbnail */}
+              <div className="relative shrink-0 w-[168px] h-[94px] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+                {video.duration !== 'LIVE' ? (
+                  <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px]">
+                    {video.duration}
+                  </span>
+                ) : (
+                  <span className="absolute top-1 left-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
+                  </span>
+                )}
+              </div>
+
+              {/* Video info with channel avatar */}
+              <div className="flex-1 min-w-0 py-0.5">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5">
+                  {video.title}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  {/* Channel avatar */}
+                  <button
+                    className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white font-medium text-[9px] transition-transform duration-200 hover:scale-110"
+                    style={{ backgroundColor: video.channelColor }}
+                    onClick={(e) => { e.stopPropagation(); openChannel(video.channelTitle); }}
+                    aria-label={`Go to ${video.channelTitle} channel`}
+                  >
+                    {video.channelInitial}
+                  </button>
+                  <p
+                    className="text-[12px] text-[#606060] dark:text-[#aaa] hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+                    onClick={(e) => { e.stopPropagation(); openChannel(video.channelTitle); }}
+                  >
+                    {video.channelTitle}
+                  </p>
+                </div>
+                <p className="text-[12px] text-[#606060] dark:text-[#aaa]">
+                  {video.views} • {video.publishedAt}
+                </p>
+              </div>
+
+              {/* Category badge + Menu */}
+              <div className="flex items-center gap-2 shrink-0 pt-1">
+                {video.category && categoryColors[video.category] && (
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${categoryColors[video.category]}`}>
+                    {video.category}
+                  </span>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openVideo(video); }}>
+                      <Play className="w-4 h-4 mr-2" />
+                      Play
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWatchLater(video.id);
+                      toast.success(isWatchLater ? 'Removed from Watch later' : 'Added to Watch later');
+                    }}>
+                      <Clock className="w-4 h-4 mr-2" />
+                      {isWatchLater ? '✓ Remove from Watch later' : 'Add to Watch later'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.success(`"${video.title}" added to queue`); }}>
+                      <ListPlus className="w-4 h-4 mr-2" />
+                      Add to queue
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

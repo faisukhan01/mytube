@@ -36,6 +36,7 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
+  const [fallbackAttempted, setFallbackAttempted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,6 +97,12 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
     }
   };
 
+  // Check if video is recently uploaded (less than 1 month)
+  const isRecentlyUploaded = (() => {
+    const t = video.publishedAt.toLowerCase();
+    return (t.includes('hours ago') || t.includes('days ago') || t.includes('weeks ago') || t.includes('hour ago') || t.includes('day ago') || t.includes('week ago')) && !t.includes('month') && !t.includes('year');
+  })();
+
   if (layout === 'shorts') {
     return (
       <div
@@ -107,8 +114,16 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <img
               src={video.thumbnail}
               alt={video.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-              onError={() => setImageError(true)}
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 ease-out"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
+                  setFallbackAttempted(true);
+                  img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
+                } else {
+                  setImageError(true);
+                }
+              }}
               loading="lazy"
             />
           ) : (
@@ -126,7 +141,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   if (layout === 'list') {
     return (
       <div
-        className="flex gap-4 cursor-pointer group py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors px-2"
+        className="flex gap-4 cursor-pointer group py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors px-2 video-card-hover"
         onClick={() => openVideo(video)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -137,21 +152,31 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <img
               src={video.thumbnail}
               alt={video.title}
-              className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-              onError={() => setImageError(true)}
+              className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
+                  setFallbackAttempted(true);
+                  img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
+                } else {
+                  setImageError(true);
+                }
+              }}
               loading="lazy"
             />
           ) : (
             <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
           )}
-          <span className={`absolute bottom-1 right-1 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
-            isHovered ? 'bg-black scale-105' : ''
-          }`}>
-            {video.duration}
-          </span>
+          {video.duration !== 'LIVE' && (
+            <span className={`absolute bottom-1 right-1 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
+              isHovered ? 'bg-black scale-105' : ''
+            }`}>
+              {video.duration}
+            </span>
+          )}
           {video.duration === 'LIVE' && (
-            <span className="absolute top-1 left-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-              LIVE
+            <span className="absolute top-1 left-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
             </span>
           )}
           {/* Watch progress bar */}
@@ -164,8 +189,14 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
         {/* Info */}
         <div className="flex-1 min-w-0 py-0.5">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5">
-            {video.title}
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5 flex items-start gap-1.5">
+            <span className="flex-1">{video.title}</span>
+            {isRecentlyUploaded && (
+              <span className="shrink-0 inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5">
+                <span className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full" />
+                NEW
+              </span>
+            )}
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <button
@@ -221,7 +252,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   // Grid layout (default)
   return (
     <div
-      className="cursor-pointer group relative"
+      className="cursor-pointer group video-card-hover relative"
       onClick={() => openVideo(video)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -232,8 +263,16 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           <img
             src={video.thumbnail}
             alt={video.title}
-            className="w-full h-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105"
-            onError={() => setImageError(true)}
+            className="w-full h-full object-cover object-center transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105"
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
+                setFallbackAttempted(true);
+                img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
+              } else {
+                setImageError(true);
+              }
+            }}
             loading="lazy"
           />
         ) : (
@@ -250,20 +289,20 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
           </span>
         )}
-        {/* Hover overlay with action buttons */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+        {/* Subtle hover brightness change */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/[0.03] transition-colors duration-300 rounded-xl" />
         {/* Quick action overlay buttons */}
-        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
+        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out translate-y-2 group-hover:translate-y-0">
           <button
             onClick={handleWatchLater}
-            className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-colors"
+            className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-all duration-200 hover:scale-105"
             aria-label={isWatchLater ? 'Remove from Watch later' : 'Watch later'}
           >
-            <Clock className={`w-4 h-4 ${isWatchLater ? 'text-blue-400' : 'text-white'}`} />
+            <Clock className={`w-4 h-4 ${isWatchLater ? 'text-blue-400' : 'text-white'} transition-colors duration-200`} />
           </button>
           <button
             onClick={handleAddToQueue}
-            className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-colors"
+            className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-all duration-200 hover:scale-105"
             aria-label="Add to queue"
           >
             <ListPlus className="w-4 h-4 text-white" />
@@ -287,7 +326,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
                 <img
                   src={video.thumbnail}
                   alt={video.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                 />
               ) : (
                 <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
@@ -331,8 +370,14 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
         {/* Text */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5">
-            {video.title}
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5 flex items-start gap-1.5">
+            <span className="flex-1">{video.title}</span>
+            {isRecentlyUploaded && (
+              <span className="shrink-0 inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5">
+                <span className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full" />
+                NEW
+              </span>
+            )}
           </h3>
           <p
             className="text-[12px] text-[#606060] dark:text-[#aaa] mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
