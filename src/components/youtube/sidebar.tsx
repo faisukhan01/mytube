@@ -25,6 +25,7 @@ import {
   ChevronRight,
   History,
   ListVideo,
+  Library,
   Shield,
   Download,
   Smartphone,
@@ -54,6 +55,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import PlaylistDialog from './playlist-dialog';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -76,6 +78,7 @@ const youItems: SidebarItem[] = [
   { icon: <History className="w-5 h-5" />, label: 'History', view: 'history' },
   { icon: <PlaySquare className="w-5 h-5" />, label: 'Your videos', view: 'home' },
   { icon: <Clock className="w-5 h-5" />, label: 'Watch later', view: 'watchlater' },
+  { icon: <Library className="w-5 h-5" />, label: 'Playlists', dialogId: 'playlists' },
   { icon: <ThumbsUp className="w-5 h-5" />, label: 'Liked videos', view: 'liked' },
 ];
 
@@ -100,10 +103,11 @@ const moreItems: SidebarItem[] = [
   { icon: <MessageSquare className="w-5 h-5" />, label: 'Send feedback', dialogId: 'feedback' },
 ];
 
-type DialogId = 'premium' | 'settings' | 'reports' | 'help' | 'feedback' | null;
+type DialogId = 'premium' | 'settings' | 'reports' | 'help' | 'feedback' | 'playlists' | null;
 
 export default function YouTubeSidebar() {
   const { sidebarOpen, currentView, setCurrentView, goHome, sidebarMini, setSelectedCategory } = useYouTubeStore();
+  const [showPlaylistsDialog, setShowPlaylistsDialog] = useState(false);
   const [activeDialog, setActiveDialog] = useState<DialogId>(null);
 
   // Settings state
@@ -116,7 +120,11 @@ export default function YouTubeSidebar() {
 
   const handleItemClick = (item: SidebarItem) => {
     if (item.dialogId) {
-      setActiveDialog(item.dialogId as DialogId);
+      if (item.dialogId === 'playlists') {
+        setShowPlaylistsDialog(true);
+      } else {
+        setActiveDialog(item.dialogId as DialogId);
+      }
       return;
     }
     if (item.category) {
@@ -281,6 +289,12 @@ export default function YouTubeSidebar() {
           </div>
         </div>
       </aside>
+
+      {/* Playlists Dialog */}
+      <PlaylistDialog
+        open={showPlaylistsDialog}
+        onOpenChange={setShowPlaylistsDialog}
+      />
 
       {/* YouTube Premium Dialog */}
       <Dialog open={activeDialog === 'premium'} onOpenChange={(open) => !open && setActiveDialog(null)}>

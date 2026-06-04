@@ -10,6 +10,7 @@ export default function CategoryChips() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const [animatingChip, setAnimatingChip] = useState<string | null>(null);
 
   const checkScroll = () => {
     if (!scrollRef.current) return;
@@ -34,15 +35,24 @@ export default function CategoryChips() {
     setTimeout(checkScroll, 300);
   };
 
+  const handleChipClick = (category: string) => {
+    if (category !== selectedCategory) {
+      setAnimatingChip(category);
+      setSelectedCategory(category);
+      // Remove animation class after it completes
+      setTimeout(() => setAnimatingChip(null), 400);
+    }
+  };
+
   return (
     <div className="sticky top-14 z-30 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-700">
       <div className="relative flex items-center h-12">
-        {/* Left arrow */}
+        {/* Left arrow with enhanced gradient fade */}
         {showLeftArrow && (
-          <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white dark:from-[#0f0f0f] via-white dark:via-[#0f0f0f] to-transparent pr-6">
+          <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white dark:from-[#0f0f0f] via-white/95 dark:via-[#0f0f0f]/95 to-transparent pr-8">
             <button
               onClick={() => scroll('left')}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full transition-all duration-150 active:scale-95"
             >
               <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
@@ -56,27 +66,35 @@ export default function CategoryChips() {
           className="flex items-center gap-3 overflow-x-auto px-4 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === category
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
-                  : 'bg-gray-100 dark:bg-[#272727] text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+          {categories.map((category) => {
+            const isActive = selectedCategory === category;
+            const isAnimating = animatingChip === category;
+            return (
+              <button
+                key={category}
+                onClick={() => handleChipClick(category)}
+                className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                  isActive
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-[#272727] text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
+                } ${isAnimating ? 'animate-bounce-in' : ''}`}
+              >
+                {category}
+                {/* Active underline indicator */}
+                {isActive && (
+                  <span className="absolute -bottom-[5px] left-[20%] right-[20%] h-[3px] bg-gray-900 dark:bg-white rounded-full chip-active-underline" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Right arrow */}
+        {/* Right arrow with enhanced gradient fade */}
         {showRightArrow && (
-          <div className="absolute right-0 z-10 flex items-center h-full bg-gradient-to-l from-white dark:from-[#0f0f0f] via-white dark:via-[#0f0f0f] to-transparent pl-6">
+          <div className="absolute right-0 z-10 flex items-center h-full bg-gradient-to-l from-white dark:from-[#0f0f0f] via-white/95 dark:via-[#0f0f0f]/95 to-transparent pl-8">
             <button
               onClick={() => scroll('right')}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full transition-all duration-150 active:scale-95"
             >
               <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>

@@ -503,12 +503,16 @@ export function getVideosByCategory(category: string): Video[] {
 
 export function searchVideos(query: string): Video[] {
   const q = query.toLowerCase();
+  const seen = new Set<string>();
   return [...homeVideos, ...shortsVideos].filter(
-    v =>
-      v.title.toLowerCase().includes(q) ||
+    v => {
+      if (seen.has(v.id)) return false;
+      seen.add(v.id);
+      return v.title.toLowerCase().includes(q) ||
       v.channelTitle.toLowerCase().includes(q) ||
       v.category.toLowerCase().includes(q) ||
-      v.description.toLowerCase().includes(q)
+      v.description.toLowerCase().includes(q);
+    }
   );
 }
 

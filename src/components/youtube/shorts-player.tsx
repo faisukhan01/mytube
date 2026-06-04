@@ -57,9 +57,11 @@ export default function ShortsPlayer() {
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const [likeAnimating, setLikeAnimating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const playerRef = useRef<YTPlayer | null>(null);
+  const swipeHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalShorts = shortsVideos.length;
   const currentShort = shortsVideos[currentShortIndex];
@@ -203,9 +205,12 @@ export default function ShortsPlayer() {
 
   // Hide swipe hint after 3 seconds
   useEffect(() => {
-    const timer = setTimeout(() => setShowSwipeHint(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (swipeHintTimeoutRef.current) clearTimeout(swipeHintTimeoutRef.current);
+    swipeHintTimeoutRef.current = setTimeout(() => setShowSwipeHint(false), 3000);
+    return () => {
+      if (swipeHintTimeoutRef.current) clearTimeout(swipeHintTimeoutRef.current);
+    };
+  }, [currentShortIndex]);
 
   if (!currentShort) return null;
 
@@ -218,6 +223,8 @@ export default function ShortsPlayer() {
   const handleLike = () => {
     toggleLike(currentShort.id);
     if (!isLiked) {
+      setLikeAnimating(true);
+      setTimeout(() => setLikeAnimating(false), 600);
       toast.success('Added to Liked videos');
     } else {
       toast.info('Removed from Liked videos');
@@ -255,11 +262,17 @@ export default function ShortsPlayer() {
       {/* Back button */}
       <button
         onClick={goHome}
-        className="fixed top-16 left-2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors text-white"
+        className="fixed top-16 left-2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white active:scale-95"
         aria-label="Go back"
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
+
+      {/* Pulsing red recording dot indicator */}
+      <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse-red" />
+        <span className="text-white text-xs font-medium">Shorts</span>
+      </div>
 
       <div
         ref={containerRef}
@@ -271,7 +284,7 @@ export default function ShortsPlayer() {
         {/* Main short container */}
         <div className="relative flex w-full max-w-[400px]">
           {/* Video container - 9:16 aspect ratio */}
-          <div className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-2xl">
+          <div className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-2xl animate-scale-in">
             {/* YouTube iframe embed */}
             <iframe
               id="shorts-yt-player"
@@ -306,7 +319,7 @@ export default function ShortsPlayer() {
                   <Button
                     size="sm"
                     variant={isSubscribed ? 'outline' : 'default'}
-                    className={`h-7 text-xs px-3 rounded-full font-medium shrink-0 ${
+                    className={`h-7 text-xs px-3 rounded-full font-medium shrink-0 transition-all duration-200 ${
                       isSubscribed
                         ? 'bg-transparent text-white border-white/30 hover:bg-white/10'
                         : 'bg-white text-black hover:bg-gray-200'
@@ -327,7 +340,7 @@ export default function ShortsPlayer() {
             {currentShortIndex > 0 && (
               <button
                 onClick={goPrev}
-                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors text-white/80 hover:text-white"
+                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white/80 hover:text-white active:scale-90"
                 aria-label="Previous short"
               >
                 <ChevronUp className="w-5 h-5" />
@@ -336,16 +349,16 @@ export default function ShortsPlayer() {
             {currentShortIndex < totalShorts - 1 && (
               <button
                 onClick={goNext}
-                className="absolute bottom-[140px] left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors text-white/80 hover:text-white"
+                className="absolute bottom-[140px] left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white/80 hover:text-white active:scale-90"
                 aria-label="Next short"
               >
                 <ChevronDown className="w-5 h-5" />
               </button>
             )}
 
-            {/* Swipe up indicator */}
+            {/* Swipe up indicator - improved animation */}
             {showSwipeHint && currentShortIndex < totalShorts - 1 && (
-              <div className="absolute bottom-[160px] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 animate-bounce">
+              <div className="absolute bottom-[160px] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 animate-swipe-hint">
                 <ChevronDown className="w-4 h-4 text-white/60" />
                 <span className="text-white/60 text-[11px] font-medium">Swipe up</span>
               </div>
@@ -357,13 +370,21 @@ export default function ShortsPlayer() {
             {/* Like */}
             <button
               onClick={handleLike}
-              className="flex flex-col items-center gap-0.5 group"
+              className="flex flex-col items-center gap-0.5 group relative"
               aria-label={isLiked ? 'Unlike' : 'Like'}
             >
-              <div className={`p-2 rounded-full transition-colors ${isLiked ? 'bg-white/20' : 'hover:bg-white/10'}`}>
-                <ThumbsUp className={`w-6 h-6 ${isLiked ? 'text-white' : 'text-white/80 group-hover:text-white'}`} fill={isLiked ? 'white' : 'none'} />
+              <div className={`p-2 rounded-full transition-all duration-200 ${isLiked ? 'bg-white/20 scale-110' : 'hover:bg-white/10'}`}>
+                <ThumbsUp className={`w-6 h-6 transition-colors duration-200 ${isLiked ? 'text-white' : 'text-white/80 group-hover:text-white'}`} fill={isLiked ? 'white' : 'none'} />
               </div>
-              <span className="text-white/80 text-[11px]">{currentShort.likes || '0'}</span>
+              <span className="text-white/80 text-[11px] relative">
+                {isLiked ? (parseInt(currentShort.likes || '0', 10) + 1) : currentShort.likes || '0'}
+                {/* Flying number animation on like */}
+                {likeAnimating && (
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-[11px] font-bold animate-fly-up">
+                    +1
+                  </span>
+                )}
+              </span>
             </button>
 
             {/* Dislike */}
@@ -371,7 +392,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Dislike"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
                 <ThumbsDown className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Dislike</span>
@@ -383,7 +404,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Comments"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
                 <MessageCircle className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Comments</span>
@@ -395,7 +416,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Share"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
                 <Share2 className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Share</span>
@@ -407,7 +428,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Remix"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
                 <Repeat2 className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Remix</span>
@@ -419,8 +440,8 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label={isSaved ? 'Remove from Watch later' : 'Save'}
             >
-              <div className={`p-2 rounded-full transition-colors ${isSaved ? 'bg-white/20' : 'hover:bg-white/10'}`}>
-                <svg className={`w-6 h-6 ${isSaved ? 'text-white' : 'text-white/80 group-hover:text-white'}`} viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className={`p-2 rounded-full transition-all duration-200 ${isSaved ? 'bg-white/20 scale-110' : 'hover:bg-white/10'}`}>
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isSaved ? 'text-white' : 'text-white/80 group-hover:text-white'}`} viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                 </svg>
               </div>
@@ -430,7 +451,7 @@ export default function ShortsPlayer() {
             {/* Channel avatar (rounded with ring) */}
             <div className="mt-1">
               <button
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white/30 overflow-hidden"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white/30 overflow-hidden transition-transform duration-200 hover:scale-110"
                 style={{ backgroundColor: currentShort.channelColor }}
                 onClick={() => openChannel(currentShort.channelTitle)}
                 aria-label={`Go to ${currentShort.channelTitle} channel`}

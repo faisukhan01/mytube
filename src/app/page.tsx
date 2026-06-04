@@ -11,6 +11,8 @@ import SearchResults from '@/components/youtube/search-results';
 import ShortsPlayer from '@/components/youtube/shorts-player';
 import TrendingView from '@/components/youtube/trending-view';
 import ChannelView from '@/components/youtube/channel-view';
+import MiniPlayer from '@/components/youtube/mini-player';
+import PlaylistView from '@/components/youtube/playlist-view';
 import {
   HistoryView,
   LikedView,
@@ -64,6 +66,8 @@ export default function Home() {
         return <SubscriptionsView />;
       case 'channel':
         return <ChannelView />;
+      case 'playlist':
+        return <PlaylistView />;
       default:
         return (
           <>
@@ -84,33 +88,41 @@ export default function Home() {
 
       {/* Main content */}
       <main
-        className={`flex-1 pt-14 transition-all duration-200 ${getMainClasses()}`}
+        className={`flex-1 pt-14 sidebar-transition ${getMainClasses()}`}
       >
-        {renderContent()}
+        <div key={currentView} className="page-transition">
+          {renderContent()}
+        </div>
       </main>
+
+      {/* Mini Player */}
+      <MiniPlayer />
 
       {/* Footer - hidden in shorts and player view */}
       {currentView !== 'shorts' && currentView !== 'player' && (
       <footer
-        className={`border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] py-4 px-6 mt-auto transition-all duration-200 ${getMainClasses()}`}
+        className={`border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] py-6 px-6 mt-auto sidebar-transition ${getMainClasses()}`}
       >
         <div className="max-w-[2000px] mx-auto">
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">About</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Press</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Copyright</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Contact us</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Creators</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Advertise</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Developers</span>
+          {/* Section 1: About, Press, Copyright, Contact us, Creators, Advertise, Developers */}
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400 mb-3">
+            <a href="#" className="footer-link">About</a>
+            <a href="#" className="footer-link">Press</a>
+            <a href="#" className="footer-link">Copyright</a>
+            <a href="#" className="footer-link">Contact us</a>
+            <a href="#" className="footer-link">Creators</a>
+            <a href="#" className="footer-link">Advertise</a>
+            <a href="#" className="footer-link">Developers</a>
           </div>
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Terms</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Privacy</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Policy & Safety</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">How YouTube works</span>
-            <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer">Test new features</span>
+          {/* Section 2: Terms, Privacy, Policy & Safety, How YouTube works, Test new features */}
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400 mb-4">
+            <a href="#" className="footer-link">Terms</a>
+            <a href="#" className="footer-link">Privacy</a>
+            <a href="#" className="footer-link">Policy & Safety</a>
+            <a href="#" className="footer-link">How YouTube works</a>
+            <a href="#" className="footer-link">Test new features</a>
           </div>
+          {/* Copyright line */}
           <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500">
             <div className="w-5 h-3 flex items-center">
               <svg viewBox="0 0 28.571 20" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
@@ -118,7 +130,7 @@ export default function Home() {
                 <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
               </svg>
             </div>
-            <span>© 2024 Google LLC</span>
+            <span>© 2025 Google LLC</span>
           </div>
         </div>
       </footer>

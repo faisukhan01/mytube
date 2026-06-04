@@ -3,6 +3,7 @@
 import { useYouTubeStore } from '@/store/youtube-store';
 import { getCommentsForVideo, getRelatedVideos, type Comment } from '@/lib/youtube-data';
 import VideoCard from './video-card';
+import PlaylistDialog from './playlist-dialog';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -14,9 +15,19 @@ import {
   ChevronUp,
   Bell,
   Check,
+  Clock,
+  ListVideo,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
@@ -26,16 +37,37 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
+function RelatedVideoSkeleton() {
+  return (
+    <div className="flex gap-2 py-1">
+      {/* Thumbnail skeleton */}
+      <div className="relative shrink-0 w-[168px] h-[94px] rounded-lg overflow-hidden">
+        <div className="absolute inset-0 bg-gray-200 dark:bg-[#272727] animate-shimmer rounded-lg" />
+        <div className="absolute bottom-1 right-1 w-9 h-3 bg-gray-300 dark:bg-[#3f3f3f] rounded animate-shimmer" />
+      </div>
+      {/* Info skeleton */}
+      <div className="flex-1 space-y-1.5 py-0.5">
+        <div className="h-3.5 bg-gray-200 dark:bg-[#272727] rounded animate-shimmer w-full" />
+        <div className="h-3.5 bg-gray-200 dark:bg-[#272727] rounded animate-shimmer w-3/4" />
+        <div className="h-3 bg-gray-200 dark:bg-[#272727] rounded animate-shimmer w-1/2" />
+        <div className="h-3 bg-gray-200 dark:bg-[#272727] rounded animate-shimmer w-1/3" />
+      </div>
+    </div>
+  );
+}
+
 export default function VideoPlayerView() {
-  const { currentVideo, toggleLike, toggleWatchLater, likedVideos, watchLater, openChannel, user } = useYouTubeStore();
+  const { currentVideo, toggleLike, toggleWatchLater, likedVideos, watchLater, openChannel, user, playlists } = useYouTubeStore();
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [sortComments, setSortComments] = useState<'top' | 'newest'>('top');
   const [commentText, setCommentText] = useState('');
   const [isDisliked, setIsDisliked] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [userComments, setUserComments] = useState<Comment[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
 
   const baseComments = useMemo(() => {
     if (!currentVideo) return [];
@@ -131,12 +163,22 @@ export default function VideoPlayerView() {
       <div className="flex-1 min-w-0">
         {/* Video player */}
         <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
+          {isVideoLoading && (
+            <div className="absolute inset-0 bg-gray-900 z-10 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-gray-800 animate-pulse flex items-center justify-center">
+                <svg className="w-8 h-8 text-white/60" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+          )}
           <iframe
             src={`https://www.youtube.com/embed/${currentVideo.id}?autoplay=1&rel=0`}
             title={currentVideo.title}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
+            onLoad={() => setIsVideoLoading(false)}
           />
         </div>
 
@@ -235,22 +277,76 @@ export default function VideoPlayerView() {
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Download</span>
             </button>
 
-            <button
-              onClick={() => {
-                toggleWatchLater(currentVideo.id);
-                if (!isWatchLater) {
-                  toast.success('Saved to Watch later');
-                } else {
-                  toast.info('Removed from Watch later');
-                }
-              }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-colors ${
-                isWatchLater ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] text-gray-800 dark:text-gray-200'
-              }`}
-            >
-              <BookmarkPlus className="w-5 h-5" />
-              <span className="text-sm font-medium">Save</span>
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-colors ${
+                    isWatchLater ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] text-gray-800 dark:text-gray-200'
+                  }`}
+                >
+                  <BookmarkPlus className="w-5 h-5" />
+                  <span className="text-sm font-medium">Save</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => {
+                    toggleWatchLater(currentVideo.id);
+                    if (!isWatchLater) {
+                      toast.success('Saved to Watch later');
+                    } else {
+                      toast.info('Removed from Watch later');
+                    }
+                  }}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  {isWatchLater ? 'Remove from Watch later' : 'Save to Watch later'}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setShowPlaylistDialog(true)}
+                >
+                  <ListVideo className="w-4 h-4 mr-2" />
+                  Save to playlist
+                </DropdownMenuItem>
+                {playlists.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    {playlists.map((pl) => (
+                      <DropdownMenuItem
+                        key={pl.id}
+                        onClick={() => {
+                          const { addToPlaylist } = useYouTubeStore.getState();
+                          if (pl.videos.includes(currentVideo.id)) {
+                            toast.info('Already in this playlist');
+                          } else {
+                            addToPlaylist(pl.id, currentVideo.id);
+                            toast.success(`Saved to "${pl.name}"`);
+                          }
+                        }}
+                      >
+                        <div className="w-4 h-4 mr-2 border border-gray-400 dark:border-gray-500 rounded-sm flex items-center justify-center shrink-0">
+                          {pl.videos.includes(currentVideo.id) && (
+                            <svg className="w-3 h-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <path d="M5 12l5 5L20 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="truncate">{pl.name}</span>
+                        <span className="ml-auto text-xs text-gray-500">{pl.videos.length}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowPlaylistDialog(true)}
+                  className="text-blue-600 dark:text-blue-400"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create new playlist
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <button className="p-2 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors">
               <MoreHorizontal className="w-5 h-5 text-gray-800 dark:text-gray-200" />
@@ -455,13 +551,28 @@ export default function VideoPlayerView() {
           ))}
         </div>
 
-        {/* Related videos list */}
+        {/* Related videos list with skeleton loading */}
         <div className="space-y-2">
-          {relatedVideos.map((video) => (
-            <VideoCard key={video.id} video={video} layout="list" />
-          ))}
+          {isVideoLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className={`stagger-${Math.min(i + 1, 8)} animate-fade-in`}>
+                <RelatedVideoSkeleton />
+              </div>
+            ))
+          ) : (
+            relatedVideos.map((video) => (
+              <VideoCard key={video.id} video={video} layout="list" />
+            ))
+          )}
         </div>
       </div>
+
+      {/* Playlist Dialog */}
+      <PlaylistDialog
+        open={showPlaylistDialog}
+        onOpenChange={setShowPlaylistDialog}
+        videoIdToSave={currentVideo?.id || null}
+      />
 
       {/* Share Dialog */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Video, Comment } from '@/lib/youtube-data';
 
-export type ViewMode = 'home' | 'player' | 'search' | 'shorts' | 'trending' | 'history' | 'liked' | 'watchlater' | 'subscriptions' | 'channel';
+export type ViewMode = 'home' | 'player' | 'search' | 'shorts' | 'trending' | 'history' | 'liked' | 'watchlater' | 'subscriptions' | 'channel' | 'playlist';
 
 export interface UserData {
   id: string;
@@ -10,6 +10,15 @@ export interface UserData {
   avatar: string;
   initials: string;
   color: string;
+}
+
+export interface Playlist {
+  id: string;
+  name: string;
+  description: string;
+  visibility: 'public' | 'unlisted' | 'private';
+  videos: string[];
+  createdAt: string;
 }
 
 interface YouTubeState {
@@ -30,6 +39,9 @@ interface YouTubeState {
   selectedChannel: string;
   user: UserData | null;
   showAuthDialog: boolean;
+  playlists: Playlist[];
+  selectedPlaylistId: string | null;
+  showPlaylistDialog: boolean;
 
   // Actions
   setCurrentView: (view: ViewMode) => void;
@@ -52,6 +64,16 @@ interface YouTubeState {
   search: (query: string) => void;
   goHome: () => void;
   openChannel: (channelName: string) => void;
+  closeMiniPlayer: () => void;
+  expandMiniPlayer: () => void;
+
+  // Playlist actions
+  createPlaylist: (name: string, description: string, visibility: 'public' | 'unlisted' | 'private') => void;
+  addToPlaylist: (playlistId: string, videoId: string) => void;
+  removeFromPlaylist: (playlistId: string, videoId: string) => void;
+  deletePlaylist: (playlistId: string) => void;
+  openPlaylist: (playlistId: string) => void;
+  setShowPlaylistDialog: (show: boolean) => void;
 
   // Auth actions
   setUser: (user: UserData | null) => void;
@@ -60,6 +82,25 @@ interface YouTubeState {
   setShowAuthDialog: (show: boolean) => void;
   fetchUserData: () => Promise<void>;
   checkSession: () => Promise<void>;
+}
+
+function loadPlaylistsFromStorage(): Playlist[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem('yt-playlists');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePlaylistsToStorage(playlists: Playlist[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('yt-playlists', JSON.stringify(playlists));
+  } catch {
+    // Silent fail
+  }
 }
 
 export const useYouTubeStore = create<YouTubeState>((set, get) => ({
@@ -80,8 +121,19 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   selectedChannel: '',
   user: null,
   showAuthDialog: false,
+  playlists: [],
+  selectedPlaylistId: null,
+  showPlaylistDialog: false,
 
-  setCurrentView: (view) => set({ currentView: view }),
+  setCurrentView: (view) => {
+    const state = get();
+    // When navigating away from player and there's a current video, show mini player
+    if (state.currentView === 'player' && view !== 'player' && state.currentVideo) {
+      set({ currentView: view, miniPlayerVideo: state.currentVideo });
+    } else {
+      set({ currentView: view });
+    }
+  },
   setCurrentVideo: (video) => set({ currentVideo: video }),
   setCurrentShortIndex: (index) => set({ currentShortIndex: index }),
   setSearchQuery: (query) => set({ searchQuery: query }),
@@ -195,10 +247,24 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   setMiniPlayerVideo: (video) => set({ miniPlayerVideo: video }),
   setSelectedChannel: (channel) => set({ selectedChannel: channel }),
 
+  closeMiniPlayer: () => set({ miniPlayerVideo: null }),
+
+  expandMiniPlayer: () => {
+    const state = get();
+    if (state.miniPlayerVideo) {
+      set({
+        currentView: 'player',
+        currentVideo: state.miniPlayerVideo,
+        miniPlayerVideo: null,
+      });
+    }
+  },
+
   openVideo: (video) => {
     set({
       currentView: 'player',
       currentVideo: video,
+      miniPlayerVideo: null,
     });
     get().addToHistory(video.id);
   },
@@ -214,17 +280,92 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     set({ searchQuery: query, isSearching: true, currentView: 'search' });
   },
 
-  goHome: () => set({
-    currentView: 'home',
-    currentVideo: null,
-    searchQuery: '',
-    searchResults: [],
-  }),
+  goHome: () => {
+    const state = get();
+    // If there's a current video playing, show mini player when going home
+    if (state.currentView === 'player' && state.currentVideo) {
+      set({
+        currentView: 'home',
+        currentVideo: null,
+        searchQuery: '',
+        searchResults: [],
+        miniPlayerVideo: state.currentVideo,
+      });
+    } else {
+      set({
+        currentView: 'home',
+        currentVideo: null,
+        searchQuery: '',
+        searchResults: [],
+      });
+    }
+  },
 
   openChannel: (channelName) => set({
     currentView: 'channel',
     selectedChannel: channelName,
   }),
+
+  // Playlist actions
+  createPlaylist: (name, description, visibility) => {
+    const newPlaylist: Playlist = {
+      id: `pl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name,
+      description,
+      visibility,
+      videos: [],
+      createdAt: new Date().toISOString(),
+    };
+    set((s) => {
+      const updated = [...s.playlists, newPlaylist];
+      savePlaylistsToStorage(updated);
+      return { playlists: updated };
+    });
+  },
+
+  addToPlaylist: (playlistId, videoId) => {
+    set((s) => {
+      const updated = s.playlists.map((pl) => {
+        if (pl.id === playlistId && !pl.videos.includes(videoId)) {
+          return { ...pl, videos: [...pl.videos, videoId] };
+        }
+        return pl;
+      });
+      savePlaylistsToStorage(updated);
+      return { playlists: updated };
+    });
+  },
+
+  removeFromPlaylist: (playlistId, videoId) => {
+    set((s) => {
+      const updated = s.playlists.map((pl) => {
+        if (pl.id === playlistId) {
+          return { ...pl, videos: pl.videos.filter((v) => v !== videoId) };
+        }
+        return pl;
+      });
+      savePlaylistsToStorage(updated);
+      return { playlists: updated };
+    });
+  },
+
+  deletePlaylist: (playlistId) => {
+    set((s) => {
+      const updated = s.playlists.filter((pl) => pl.id !== playlistId);
+      savePlaylistsToStorage(updated);
+      return {
+        playlists: updated,
+        selectedPlaylistId: s.selectedPlaylistId === playlistId ? null : s.selectedPlaylistId,
+      };
+    });
+  },
+
+  openPlaylist: (playlistId) => set({
+    currentView: 'playlist',
+    selectedPlaylistId: playlistId,
+  }),
+
+  setShowPlaylistDialog: (show) => set({ showPlaylistDialog: show }),
 
   // Auth actions
   setUser: (user) => set({ user }),
@@ -273,5 +414,8 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     } catch {
       // Not authenticated, that's fine
     }
+    // Load playlists from localStorage regardless of auth
+    const playlists = loadPlaylistsFromStorage();
+    set({ playlists });
   },
 }));

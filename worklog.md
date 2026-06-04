@@ -250,7 +250,162 @@ Current Project Status:
 
 Unresolved Issues / Next Phase Priorities:
 - Could add infinite scroll/pagination for video grid
-- Could add playlist creation feature
 - Some Shorts thumbnails may not load due to YouTube CDN restrictions
 - Could improve mobile responsive layout further
 - Could add more channel-specific features
+
+---
+Task ID: 6b
+Agent: Mini Player & Playlist Agent
+Task: Add Mini Player and Playlist System features to the YouTube clone
+
+Work Log:
+- Updated youtube-store.ts with major additions:
+  - Added 'playlist' to ViewMode type
+  - Added Playlist interface: { id, name, description, visibility, videos, createdAt }
+  - Added playlists state (Playlist[]) and selectedPlaylistId state
+  - Added showPlaylistDialog state
+  - Added closeMiniPlayer action (sets miniPlayerVideo to null)
+  - Added expandMiniPlayer action (opens video back in full player view)
+  - Modified setCurrentView: when navigating away from 'player' and currentVideo exists, sets miniPlayerVideo
+  - Modified openVideo: clears miniPlayerVideo when opening a video
+  - Added createPlaylist, addToPlaylist, removeFromPlaylist, deletePlaylist, openPlaylist, setShowPlaylistDialog actions
+  - Added localStorage persistence for playlists (loadPlaylistsFromStorage, savePlaylistsToStorage)
+  - Modified checkSession: loads playlists from localStorage on init
+- Created /src/components/youtube/mini-player.tsx:
+  - Shows small video player (300px wide, 168px tall) fixed to bottom-right
+  - YouTube iframe embed of current miniPlayerVideo with autoplay
+  - Title and channel name overlaid on bottom
+  - Close (X) button to dismiss mini player
+  - Expand button to go back to full player view
+  - Drag to reposition support via mouse events
+  - Animated entrance using CSS animate-in (slide-in-from-bottom-4 fade-in)
+  - Hover reveals expand/close buttons
+- Created /src/components/youtube/playlist-dialog.tsx:
+  - Dialog with two tabs: "Create Playlist" and "My Playlists"
+  - Create Playlist tab: name input, description textarea, visibility dropdown (Public/Unlisted/Private), Create button
+  - My Playlists tab: list of playlists with thumbnail, video count, visibility icon
+  - When saving a video (videoIdToSave prop): shows checkbox UI, "Save to playlist" option, "+ Create new playlist" link
+  - When browsing: expandable playlist shows video list, Play all button, Delete button
+  - Uses shadcn/ui Dialog, Tabs, Select components
+- Created /src/components/youtube/playlist-view.tsx:
+  - Full page view for a specific playlist
+  - Playlist banner with gradient background, thumbnail grid, name, description, video count
+  - Play all and Shuffle buttons
+  - Delete playlist button
+  - List of videos with index number, thumbnail, title, channel, views
+  - Remove from playlist button (appears on hover)
+  - Empty state when no videos in playlist
+  - Back button to return to home
+- Edited /src/components/youtube/video-player-view.tsx:
+  - Changed Save button from simple button to DropdownMenu trigger
+  - Dropdown contains: "Save to Watch later", "Save to playlist", list of existing playlists with checkmarks, "+ Create new playlist"
+  - Clicking a playlist in dropdown saves the video to that playlist
+  - Added PlaylistDialog component rendered at bottom of player view
+  - Added Clock, ListVideo, Plus icons from lucide-react
+  - Added showPlaylistDialog state
+- Edited /src/components/youtube/sidebar.tsx:
+  - Added "Playlists" item in the "You" section between "Watch later" and "Liked videos"
+  - Uses Library icon from lucide-react
+  - Clicking opens PlaylistDialog (managed via showPlaylistsDialog state)
+  - Added PlaylistDialog component import and rendering
+- Edited /src/app/page.tsx:
+  - Added MiniPlayer component import and rendering (always present when miniPlayerVideo is set)
+  - Added PlaylistView component import and 'playlist' case in renderContent switch
+- All new code passes lint with zero new errors
+- 4 remaining lint errors are pre-existing in other files (shorts-player.tsx, video-card.tsx, video-grid.tsx)
+
+Stage Summary:
+- Mini Player feature fully implemented: when navigating away from video player, video shrinks to bottom-right corner with controls
+- Playlist System fully implemented: create, manage, save videos to, view, and delete playlists
+- Save button in video player now has dropdown with playlist options
+- Sidebar has Playlists item in You section
+- Playlists persist in localStorage across sessions
+- All features work with dark mode
+
+---
+Task ID: 6a
+Agent: Polish & Animation Agent
+Task: Dramatically improve styling, animations, and visual polish of the YouTube clone
+
+Work Log:
+- Added comprehensive keyframe animations to globals.css: fadeIn, slideUp, scaleIn, shimmer, slideInLeft, slideInRight, pulseRed, flyUp, bounceIn, swipeHint, chipUnderline
+- Added animation utility classes: animate-fade-in, animate-slide-up, animate-scale-in, animate-bounce-in, animate-shimmer (with dark mode variant), animate-pulse-red, animate-fly-up, animate-swipe-hint
+- Added staggered animation delay classes (stagger-1 through stagger-8) for sequential entrance effects
+- Added page transition classes (page-transition, sidebar-transition) for smooth view switching
+- Added focus-visible ring styling matching YouTube's blue outline (#1c62b9)
+- Added smooth scrolling behavior (scroll-behavior: smooth)
+- Added dark mode scrollbar styling for content areas
+- Added footer-link hover underline effect using CSS pseudo-elements
+- Added watched-progress and chip-active-underline CSS classes
+- Enhanced VideoGrid component with VideoCardSkeleton and VideoGridSkeleton components
+  - Skeleton cards with shimmer effect matching video card layout (thumbnail, avatar, text lines, duration badge)
+  - Staggered animation delays for skeleton grid
+  - Initial loading state with 600ms skeleton display
+  - Category change triggers page-transition animation with key-based re-render
+  - Empty state with scaleIn animation
+- Enhanced SearchResults component with SearchResultSkeleton
+  - Detailed skeleton matching real search result layout (thumbnail with progress bar, channel avatar, title lines, metadata lines, menu button)
+  - Staggered fade-in for skeleton rows
+  - Filter buttons with transition-all duration
+  - Results with staggered slide-up animation
+  - Error and no-results states with scaleIn animation
+- Enhanced VideoPlayerView with RelatedVideoSkeleton
+  - Skeleton loading for related videos sidebar while main video loads
+  - Video player shows loading spinner (pulse animation) while iframe loads
+  - isVideoLoading state tracks iframe load event
+  - Related video skeletons show 8 skeleton items with staggered animation
+- Enhanced VideoCard with multiple hover improvements:
+  - Hover tooltip with 600ms delay (like YouTube) showing title, channel, duration
+  - Better thumbnail hover scale animation with cubic-bezier easing (0.25, 0.46, 0.45, 0.94)
+  - Duration badge animates on hover (scale-110, shadow-lg, bg-black)
+  - Watched progress bar at bottom of thumbnail (red bar, random 10-90% for ~30% of cards)
+  - Action buttons slide in with translate-y transition on hover
+  - Channel avatar scales on hover (hover:scale-110)
+  - Live badge has pulsing white dot indicator
+  - Grid layout tooltip appears below card with scaleIn animation
+- Enhanced CategoryChips with improved interactions:
+  - Spring bounce animation (animate-bounce-in) when selecting a new chip
+  - Active chip underline indicator (chip-active-underline with animation)
+  - Better gradient fade on scroll arrows (via-white/95 for smoother blend)
+  - Arrow buttons with active:scale-95 press effect
+  - transition-all duration-200 on chip buttons
+- Added smooth page transitions to page.tsx:
+  - Main content wrapped in page-transition div with key={currentView} for re-mount animation
+  - Sidebar margin uses sidebar-transition class for smooth cubic-bezier animation
+  - Footer uses sidebar-transition class matching sidebar state
+- Enhanced ShortsPlayer with visual polish:
+  - Pulsing red recording dot indicator in header ("Shorts" badge with animate-pulse-red)
+  - Flying "+1" animation when liking (animate-fly-up class)
+  - Like count updates dynamically (derived from video data + liked state)
+  - Improved swipe hint animation (animate-swipe-hint, smoother than bounce)
+  - Scale-in animation on video container when switching shorts
+  - Action buttons have transition-all duration-200
+  - Back and navigation buttons have active:scale-90/95 press effects
+  - Subscribe button has transition-all duration-200
+  - Channel avatar in action bar has hover:scale-110
+  - Like/Save buttons scale to 110% when active
+  - Swipe hint resets and shows on each new short
+- Enhanced Footer in page.tsx:
+  - Changed from <span> to <a> elements with footer-link class
+  - Hover underline effect using CSS pseudo-element (::after with width transition)
+  - Updated copyright year from 2024 to 2025
+  - Increased padding from py-4 to py-6
+  - Added proper section comments
+- Fixed all lint errors:
+  - video-card.tsx: Removed useEffect for tooltip, replaced with direct setTimeout in mouse handlers
+  - video-grid.tsx: Simplified loading pattern, removed setState-in-effect issues
+  - shorts-player.tsx: Removed setState-in-effect for likeCount, derived from video data + liked state; fixed swipe hint to use ref-based timeout pattern
+- All lint checks pass with zero errors
+
+Stage Summary:
+- Professional-level animations and visual polish added throughout the app
+- Shimmer loading skeletons for video grid, search results, and related videos
+- Smooth page transitions with fadeIn and key-based re-mount
+- Video card hover tooltip with delay, watched progress bar, animated duration badge
+- Category chips with spring bounce and underline indicator
+- Shorts player with pulsing red dot, flying like animation, improved swipe indicator
+- Footer with hover underline effect and updated 2025 copyright
+- YouTube-blue focus-visible ring styling throughout
+- Dark mode scrollbar improvements
+- Zero lint errors, app compiles and runs successfully
