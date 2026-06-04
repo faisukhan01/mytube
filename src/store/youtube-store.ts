@@ -17,6 +17,7 @@ interface YouTubeState {
   watchHistory: string[];
   isSearching: boolean;
   miniPlayerVideo: Video | null;
+  selectedChannel: string;
 
   // Actions
   setCurrentView: (view: ViewMode) => void;
@@ -32,9 +33,11 @@ interface YouTubeState {
   toggleWatchLater: (videoId: string) => void;
   addToHistory: (videoId: string) => void;
   setMiniPlayerVideo: (video: Video | null) => void;
+  setSelectedChannel: (channel: string) => void;
   openVideo: (video: Video) => void;
   search: (query: string) => void;
   goHome: () => void;
+  openChannel: (channelName: string) => void;
 }
 
 export const useYouTubeStore = create<YouTubeState>((set, get) => ({
@@ -51,6 +54,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   watchHistory: [],
   isSearching: false,
   miniPlayerVideo: null,
+  selectedChannel: '',
 
   setCurrentView: (view) => set({ currentView: view }),
   setCurrentVideo: (video) => set({ currentVideo: video }),
@@ -75,6 +79,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     watchHistory: [videoId, ...state.watchHistory.filter(id => id !== videoId)],
   })),
   setMiniPlayerVideo: (video) => set({ miniPlayerVideo: video }),
+  setSelectedChannel: (channel) => set({ selectedChannel: channel }),
 
   openVideo: (video) => {
     set({
@@ -93,5 +98,10 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     currentVideo: null,
     searchQuery: '',
     searchResults: [],
+  }),
+
+  openChannel: (channelName) => set({
+    currentView: 'channel',
+    selectedChannel: channelName,
   }),
 }));

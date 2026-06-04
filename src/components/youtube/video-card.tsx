@@ -33,10 +33,15 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
 }
 
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
-  const { openVideo, toggleWatchLater, toggleLike, watchLater, likedVideos } = useYouTubeStore();
+  const { openVideo, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
   const isWatchLater = watchLater.includes(video.id);
   const isLiked = likedVideos.includes(video.id);
+
+  const handleChannelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openChannel(video.channelTitle);
+  };
 
   if (layout === 'shorts') {
     return (
@@ -44,7 +49,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         className="cursor-pointer group shrink-0 w-[170px] sm:w-[190px]"
         onClick={() => openVideo(video)}
       >
-        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-100">
+        <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
           {!imageError ? (
             <img
               src={video.thumbnail}
@@ -68,11 +73,11 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   if (layout === 'list') {
     return (
       <div
-        className="flex gap-4 cursor-pointer group py-2 rounded-lg hover:bg-gray-50 transition-colors px-2"
+        className="flex gap-4 cursor-pointer group py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-[#272727] transition-colors px-2"
         onClick={() => openVideo(video)}
       >
         {/* Thumbnail */}
-        <div className="relative shrink-0 w-[168px] h-[94px] rounded-lg overflow-hidden bg-gray-100">
+        <div className="relative shrink-0 w-[168px] h-[94px] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
           {!imageError ? (
             <img
               src={video.thumbnail}
@@ -96,11 +101,16 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
         {/* Info */}
         <div className="flex-1 min-w-0 py-0.5">
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5">
             {video.title}
           </h3>
-          <p className="text-xs text-gray-600 mt-1">{video.channelTitle}</p>
-          <p className="text-xs text-gray-600">
+          <p
+            className="text-xs text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+            onClick={handleChannelClick}
+          >
+            {video.channelTitle}
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             {video.views} • {video.publishedAt}
           </p>
         </div>
@@ -109,10 +119,10 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="p-1.5 hover:bg-gray-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="w-5 h-5 text-gray-700" />
+              <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -135,7 +145,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
       onClick={() => openVideo(video)}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100">
+      <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
         {!imageError ? (
           <img
             src={video.thumbnail}
@@ -162,22 +172,27 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
       {/* Info */}
       <div className="flex gap-3 mt-3">
         {/* Channel avatar */}
-        <div
+        <button
           className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm"
           style={{ backgroundColor: video.channelColor }}
+          onClick={handleChannelClick}
+          aria-label={`Go to ${video.channelTitle} channel`}
         >
           {video.channelInitial}
-        </div>
+        </button>
 
         {/* Text */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-5">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5">
             {video.title}
           </h3>
-          <p className="text-xs text-gray-600 mt-1 hover:text-gray-900 transition-colors">
+          <p
+            className="text-xs text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+            onClick={handleChannelClick}
+          >
             {video.channelTitle}
           </p>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             {video.views} • {video.publishedAt}
           </p>
         </div>
@@ -186,10 +201,10 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="p-1.5 hover:bg-gray-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-fit"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-fit"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="w-5 h-5 text-gray-700" />
+              <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

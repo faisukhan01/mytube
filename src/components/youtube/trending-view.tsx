@@ -2,7 +2,7 @@
 
 import { homeVideos } from '@/lib/youtube-data';
 import VideoCard from './video-card';
-import { Flame, TrendingUp } from 'lucide-react';
+import { Flame } from 'lucide-react';
 
 export default function TrendingView() {
   const trendingVideos = homeVideos.slice(0, 20);
@@ -14,15 +14,15 @@ export default function TrendingView() {
           <Flame className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Trending</h1>
-          <p className="text-sm text-gray-600">See what&apos;s trending on YouTube right now</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Trending</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">See what&apos;s trending on YouTube right now</p>
         </div>
       </div>
 
       <div className="space-y-2">
         {trendingVideos.map((video, index) => (
           <div key={video.id} className="flex gap-4">
-            <span className="text-2xl font-light text-gray-400 w-8 shrink-0 pt-1 text-right">
+            <span className="text-2xl font-light text-gray-400 dark:text-gray-500 w-8 shrink-0 pt-1 text-right">
               {index + 1}
             </span>
             <div className="flex-1">

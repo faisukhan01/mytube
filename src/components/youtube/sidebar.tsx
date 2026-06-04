@@ -78,26 +78,26 @@ export default function YouTubeSidebar() {
     if (view === 'home') {
       goHome();
     } else {
-      setCurrentView(view as any);
+      setCurrentView(view as Parameters<typeof setCurrentView>[0]);
     }
   };
 
   // Mini sidebar (collapsed)
   if (sidebarMini && !sidebarOpen) {
     return (
-      <aside className="fixed left-0 top-14 bottom-0 w-[72px] bg-white z-40 overflow-y-auto hidden md:flex flex-col items-center pt-1 pb-4">
+      <aside className="fixed left-0 top-14 bottom-0 w-[72px] bg-white dark:bg-[#0f0f0f] z-40 overflow-y-auto hidden md:flex flex-col items-center pt-1 pb-4">
         {mainItems.map((item) => (
           <button
             key={item.label}
             onClick={() => handleItemClick(item.view)}
-            className={`flex flex-col items-center justify-center w-full py-4 px-1 hover:bg-gray-100 transition-colors ${
+            className={`flex flex-col items-center justify-center w-full py-4 px-1 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
               currentView === item.view ? 'font-medium' : ''
             }`}
           >
-            <div className={`${currentView === item.view ? 'text-black' : 'text-gray-700'}`}>
+            <div className={`${currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>
               {item.icon}
             </div>
-            <span className="text-[10px] mt-1.5 text-gray-700 leading-tight">{item.label}</span>
+            <span className="text-[10px] mt-1.5 text-gray-700 dark:text-gray-400 leading-tight">{item.label}</span>
           </button>
         ))}
       </aside>
@@ -116,7 +116,7 @@ export default function YouTubeSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-14 bottom-0 w-[240px] bg-white z-40 overflow-y-auto transition-transform duration-200 ${
+        className={`fixed left-0 top-14 bottom-0 w-[240px] bg-white dark:bg-[#0f0f0f] z-40 overflow-y-auto transition-transform duration-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:hidden'
         }`}
       >
@@ -126,79 +126,79 @@ export default function YouTubeSidebar() {
             <button
               key={item.label}
               onClick={() => handleItemClick(item.view)}
-              className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors ${
-                currentView === item.view ? 'bg-gray-100 font-medium' : ''
+              className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
+                currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
               }`}
             >
-              <span className={currentView === item.view ? 'text-black' : 'text-gray-700'}>
+              <span className={currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}>
                 {item.icon}
               </span>
-              <span className="text-sm text-gray-800">{item.label}</span>
+              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3" />
+          <Separator className="my-3 dark:bg-gray-700" />
 
           {/* You section */}
           <div className="flex items-center gap-1 px-3 mb-1">
-            <span className="text-base text-gray-800 font-medium">You</span>
-            <ChevronRight className="w-4 h-4 text-gray-600" />
+            <span className="text-base text-gray-800 dark:text-gray-200 font-medium">You</span>
+            <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
           {youItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item.view)}
-              className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors ${
-                currentView === item.view ? 'bg-gray-100 font-medium' : ''
+              className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
+                currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
               }`}
             >
-              <span className={currentView === item.view ? 'text-black' : 'text-gray-700'}>
+              <span className={currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}>
                 {item.icon}
               </span>
-              <span className="text-sm text-gray-800">{item.label}</span>
+              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3" />
+          <Separator className="my-3 dark:bg-gray-700" />
 
           {/* Explore section */}
-          <h3 className="px-3 mb-1 text-base text-gray-800 font-medium">Explore</h3>
+          <h3 className="px-3 mb-1 text-base text-gray-800 dark:text-gray-200 font-medium">Explore</h3>
           {exploreItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item.view)}
-              className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
             >
-              <span className="text-gray-700">{item.icon}</span>
-              <span className="text-sm text-gray-800">{item.label}</span>
+              <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
+              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3" />
+          <Separator className="my-3 dark:bg-gray-700" />
 
           {/* More from YouTube */}
-          <h3 className="px-3 mb-1 text-base text-gray-800 font-medium">More from YouTube</h3>
+          <h3 className="px-3 mb-1 text-base text-gray-800 dark:text-gray-200 font-medium">More from YouTube</h3>
           {moreItems.map((item) => (
             <button
               key={item.label}
-              className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
             >
-              <span className="text-gray-700">{item.icon}</span>
-              <span className="text-sm text-gray-800">{item.label}</span>
+              <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
+              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3" />
+          <Separator className="my-3 dark:bg-gray-700" />
 
           {/* Footer */}
           <div className="px-3 py-3">
-            <p className="text-xs text-gray-500 leading-relaxed">
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
               About Press Copyright Contact us Creators Advertise Developers
             </p>
-            <p className="text-xs text-gray-500 leading-relaxed mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-2">
               Terms Privacy Policy & Safety How YouTube works Test new features
             </p>
-            <p className="text-xs text-gray-400 mt-4">© 2024 Google LLC</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">© 2024 Google LLC</p>
           </div>
         </div>
       </aside>

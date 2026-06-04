@@ -14,8 +14,8 @@ export function HistoryView() {
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Clock className="w-7 h-7 text-gray-700" />
-        <h1 className="text-2xl font-bold text-gray-900">Watch history</h1>
+        <Clock className="w-7 h-7 text-gray-700 dark:text-gray-300" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Watch history</h1>
       </div>
 
       {historyVideos.length > 0 ? (
@@ -26,9 +26,9 @@ export function HistoryView() {
         </div>
       ) : (
         <div className="flex flex-col items-center py-20">
-          <Clock className="w-16 h-16 text-gray-300 mb-4" />
-          <p className="text-gray-600 text-lg font-medium">No watch history</p>
-          <p className="text-gray-500 text-sm mt-1">Videos you watch will show up here</p>
+          <Clock className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">No watch history</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Videos you watch will show up here</p>
         </div>
       )}
     </div>
@@ -44,8 +44,8 @@ export function LikedView() {
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <ThumbsUp className="w-7 h-7 text-gray-700" />
-        <h1 className="text-2xl font-bold text-gray-900">Liked videos</h1>
+        <ThumbsUp className="w-7 h-7 text-gray-700 dark:text-gray-300" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Liked videos</h1>
       </div>
 
       {liked.length > 0 ? (
@@ -56,9 +56,9 @@ export function LikedView() {
         </div>
       ) : (
         <div className="flex flex-col items-center py-20">
-          <ThumbsUp className="w-16 h-16 text-gray-300 mb-4" />
-          <p className="text-gray-600 text-lg font-medium">No liked videos</p>
-          <p className="text-gray-500 text-sm mt-1">Use the 👍 button to like videos</p>
+          <ThumbsUp className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">No liked videos</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Use the 👍 button to like videos</p>
         </div>
       )}
     </div>
@@ -74,8 +74,8 @@ export function WatchLaterView() {
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <ListVideo className="w-7 h-7 text-gray-700" />
-        <h1 className="text-2xl font-bold text-gray-900">Watch later</h1>
+        <ListVideo className="w-7 h-7 text-gray-700 dark:text-gray-300" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Watch later</h1>
       </div>
 
       {videos.length > 0 ? (
@@ -86,9 +86,9 @@ export function WatchLaterView() {
         </div>
       ) : (
         <div className="flex flex-col items-center py-20">
-          <ListVideo className="w-16 h-16 text-gray-300 mb-4" />
-          <p className="text-gray-600 text-lg font-medium">No videos in Watch later</p>
-          <p className="text-gray-500 text-sm mt-1">Save videos to watch later</p>
+          <ListVideo className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">No videos in Watch later</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Save videos to watch later</p>
         </div>
       )}
     </div>
@@ -98,13 +98,13 @@ export function WatchLaterView() {
 export function SubscriptionsView() {
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Subscriptions</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Subscriptions</h1>
       <div className="flex flex-col items-center py-20">
-        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <ListVideo className="w-12 h-12 text-gray-400" />
+        <div className="w-24 h-24 bg-gray-100 dark:bg-[#272727] rounded-full flex items-center justify-center mb-4">
+          <ListVideo className="w-12 h-12 text-gray-400 dark:text-gray-500" />
         </div>
-        <p className="text-gray-600 text-lg font-medium">Channels you subscribe to will show up here</p>
-        <p className="text-gray-500 text-sm mt-1">Subscribe to your favorite channels</p>
+        <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Channels you subscribe to will show up here</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Subscribe to your favorite channels</p>
       </div>
     </div>
   );

@@ -35,16 +35,16 @@ export default function CategoryChips() {
   };
 
   return (
-    <div className="sticky top-14 z-30 bg-white border-b border-gray-200">
+    <div className="sticky top-14 z-30 bg-white dark:bg-[#0f0f0f] border-b border-gray-200 dark:border-gray-700">
       <div className="relative flex items-center h-12">
         {/* Left arrow */}
         {showLeftArrow && (
-          <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white via-white to-transparent pr-6">
+          <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white dark:from-[#0f0f0f] via-white dark:via-[#0f0f0f] to-transparent pr-6">
             <button
               onClick={() => scroll('left')}
-              className="p-1.5 hover:bg-gray-100 rounded-full"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
+              <ChevronLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
           </div>
         )}
@@ -62,8 +62,8 @@ export default function CategoryChips() {
               onClick={() => setSelectedCategory(category)}
               className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 selectedCategory === category
-                  ? 'bg-gray-900 text-white hover:bg-gray-800'
-                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  ? 'bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                  : 'bg-gray-100 dark:bg-[#272727] text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
               }`}
             >
               {category}
@@ -73,12 +73,12 @@ export default function CategoryChips() {
 
         {/* Right arrow */}
         {showRightArrow && (
-          <div className="absolute right-0 z-10 flex items-center h-full bg-gradient-to-l from-white via-white to-transparent pl-6">
+          <div className="absolute right-0 z-10 flex items-center h-full bg-gradient-to-l from-white dark:from-[#0f0f0f] via-white dark:via-[#0f0f0f] to-transparent pl-6">
             <button
               onClick={() => scroll('right')}
-              className="p-1.5 hover:bg-gray-100 rounded-full"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#272727] rounded-full"
             >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
+              <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
           </div>
         )}
