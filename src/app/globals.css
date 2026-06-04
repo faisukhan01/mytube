@@ -278,6 +278,26 @@
   100% { height: 4px; }
 }
 
+@keyframes previewProgress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes chapterPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes chapterOverlayFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes chapterOverlayFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(4px); }
+}
+
 
 
 /* ===== Animation Utility Classes ===== */
@@ -383,6 +403,22 @@
 .animate-underline-slide {
   animation: underlineSlide 0.3s ease-out both;
   transform-origin: left;
+}
+
+.animate-preview-progress {
+  animation: previewProgress 3s linear forwards;
+}
+
+.animate-chapter-pulse {
+  animation: chapterPulse 2s ease-in-out infinite;
+}
+
+.animate-chapter-overlay-in {
+  animation: chapterOverlayFadeIn 0.3s ease-out both;
+}
+
+.animate-chapter-overlay-out {
+  animation: chapterOverlayFadeOut 0.3s ease-in both;
 }
 
 /* ===== Page Transition Classes ===== */

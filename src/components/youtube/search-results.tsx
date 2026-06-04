@@ -3,8 +3,8 @@
 import { useYouTubeStore } from '@/store/youtube-store';
 import { searchVideos, homeVideos } from '@/lib/youtube-data';
 import VideoCard from './video-card';
-import { Search, Filter, Clock, Eye, Play } from 'lucide-react';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { Search, Filter, Clock, Eye, Play, X } from 'lucide-react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 
 function SearchResultSkeleton() {
   return (
@@ -45,11 +45,52 @@ const searchFilters = [
   { id: 'Playlists', icon: Clock },
 ];
 
+// Filter panel categories
+const uploadDateOptions = ['Last hour', 'Today', 'This week', 'This month', 'This year'];
+const typeOptions = ['Video', 'Channel', 'Playlist', 'Movie', 'Show'];
+const durationOptions = ['Under 4 minutes', '4-20 minutes', 'Over 20 minutes'];
+
+// Helper: parse duration string to total seconds
+function parseDurationToSeconds(duration: string): number {
+  if (!duration || duration === 'LIVE') return Infinity;
+  const parts = duration.split(':').map(Number);
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+  return parts[0] || 0;
+}
+
+// Helper: get duration category
+function getDurationCategory(duration: string): string | null {
+  if (!duration || duration === 'LIVE') return null;
+  const seconds = parseDurationToSeconds(duration);
+  if (seconds < 240) return 'Under 4 minutes';
+  if (seconds <= 1200) return '4-20 minutes';
+  return 'Over 20 minutes';
+}
+
+type FilterState = {
+  uploadDate: string | null;
+  type: string | null;
+  duration: string | null;
+};
+
 export default function SearchResults() {
   const { searchQuery, searchResults, setSearchResults } = useYouTubeStore();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [error, setError] = useState<string | null>(null);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [filterState, setFilterState] = useState<FilterState>({
+    uploadDate: null,
+    type: null,
+    duration: null,
+  });
+  const filterPanelRef = useRef<HTMLDivElement>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
 
   const performSearch = useCallback(async (query: string) => {
     if (!query) return;
@@ -87,22 +128,72 @@ export default function SearchResults() {
     }
   }, [searchQuery, performSearch]);
 
+  // Close filter panel on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        filterPanelRef.current &&
+        !filterPanelRef.current.contains(e.target as Node) &&
+        filterButtonRef.current &&
+        !filterButtonRef.current.contains(e.target as Node)
+      ) {
+        setShowFilterPanel(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleFilter = (category: keyof FilterState, value: string) => {
+    setFilterState((prev) => ({
+      ...prev,
+      [category]: prev[category] === value ? null : value,
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setFilterState({ uploadDate: null, type: null, duration: null });
+  };
+
+  const hasActiveFilters = filterState.uploadDate || filterState.type || filterState.duration;
+
   const results = useMemo(() => {
     // Deduplicate by video ID to prevent React key warnings
     const seen = new Set<string>();
-    const deduped = searchResults.filter((v: { id: string }) => {
+    let deduped = searchResults.filter((v: { id: string }) => {
       if (seen.has(v.id)) return false;
       seen.add(v.id);
       return true;
     });
+
+    // Apply type filter from top-level filter buttons
     if (selectedFilter === 'Live') {
-      return deduped.filter((v: { duration: string }) => v.duration === 'LIVE');
+      deduped = deduped.filter((v: { duration: string }) => v.duration === 'LIVE');
     }
     if (selectedFilter === 'Videos') {
-      return deduped.filter((v: { duration: string }) => v.duration !== 'LIVE');
+      deduped = deduped.filter((v: { duration: string }) => v.duration !== 'LIVE');
     }
+
+    // Apply filter panel duration filter
+    if (filterState.duration) {
+      deduped = deduped.filter((v: { duration: string }) => {
+        return getDurationCategory(v.duration) === filterState.duration;
+      });
+    }
+
+    // Apply filter panel type filter
+    if (filterState.type) {
+      // Approximate: since our data doesn't have a type field, we use category as a proxy
+      // Video = all non-LIVE videos (default), Channel = filtered by Channels top-level, etc.
+      // For realism, we'll just show all for now since local data doesn't have type distinction
+      if (filterState.type === 'Video') {
+        deduped = deduped.filter((v: { duration: string }) => v.duration !== 'LIVE');
+      }
+      // Other types we can't meaningfully filter from local data, so we keep them all
+    }
+
     return deduped;
-  }, [searchResults, selectedFilter]);
+  }, [searchResults, selectedFilter, filterState]);
 
   // Generate "Search instead for" suggestion when results are limited
   const searchSuggestion = useMemo(() => {
@@ -141,10 +232,109 @@ export default function SearchResults() {
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto page-transition">
       {/* Search filter buttons - like real YouTube */}
       <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 transition-opacity duration-200" style={{ scrollbarWidth: 'none' }}>
-        <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors shrink-0">
-          <Filter className="w-4 h-4" />
-          Filters
-        </button>
+        <div className="relative shrink-0">
+          <button
+            ref={filterButtonRef}
+            onClick={() => setShowFilterPanel(!showFilterPanel)}
+            className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg text-sm font-medium transition-colors ${
+              showFilterPanel || hasActiveFilters
+                ? 'border-[#065fd4] text-[#065fd4] dark:text-[#3ea6ff] dark:border-[#3ea6ff] bg-blue-50 dark:bg-blue-900/20'
+                : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727]'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Filters
+            {hasActiveFilters && (
+              <span className="w-1.5 h-1.5 rounded-full bg-[#065fd4] dark:bg-[#3ea6ff]" />
+            )}
+          </button>
+
+          {/* Filter Panel Dropdown */}
+          {showFilterPanel && (
+            <div
+              ref={filterPanelRef}
+              className="absolute top-full left-0 mt-2 w-[320px] bg-white dark:bg-[#282828] border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-4 z-50 animate-fade-in"
+            >
+              {/* Upload Date */}
+              <div className="mb-4">
+                <h4 className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Upload date
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {uploadDateOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => toggleFilter('uploadDate', option)}
+                      className={`px-2.5 py-1 rounded text-[12px] transition-colors ${
+                        filterState.uploadDate === option
+                          ? 'bg-[#065fd4] text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727]'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Type */}
+              <div className="mb-4">
+                <h4 className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Type
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {typeOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => toggleFilter('type', option)}
+                      className={`px-2.5 py-1 rounded text-[12px] transition-colors ${
+                        filterState.type === option
+                          ? 'bg-[#065fd4] text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727]'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div className="mb-3">
+                <h4 className="text-[11px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Duration
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {durationOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => toggleFilter('duration', option)}
+                      className={`px-2.5 py-1 rounded text-[12px] transition-colors ${
+                        filterState.duration === option
+                          ? 'bg-[#065fd4] text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727]'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Clear all */}
+              {hasActiveFilters && (
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-[12px] text-[#065fd4] dark:text-[#3ea6ff] font-medium hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1 shrink-0" />
         {searchFilters.map((filter) => {
           const Icon = filter.icon;
@@ -164,6 +354,36 @@ export default function SearchResults() {
           );
         })}
       </div>
+
+      {/* Active filter chips */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          {filterState.uploadDate && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#065fd4]/10 dark:bg-[#3ea6ff]/10 text-[#065fd4] dark:text-[#3ea6ff] text-[12px] rounded-full">
+              {filterState.uploadDate}
+              <button onClick={() => toggleFilter('uploadDate', filterState.uploadDate!)} className="hover:bg-[#065fd4]/20 dark:hover:bg-[#3ea6ff]/20 rounded-full p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {filterState.type && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#065fd4]/10 dark:bg-[#3ea6ff]/10 text-[#065fd4] dark:text-[#3ea6ff] text-[12px] rounded-full">
+              {filterState.type}
+              <button onClick={() => toggleFilter('type', filterState.type!)} className="hover:bg-[#065fd4]/20 dark:hover:bg-[#3ea6ff]/20 rounded-full p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {filterState.duration && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#065fd4]/10 dark:bg-[#3ea6ff]/10 text-[#065fd4] dark:text-[#3ea6ff] text-[12px] rounded-full">
+              {filterState.duration}
+              <button onClick={() => toggleFilter('duration', filterState.duration!)} className="hover:bg-[#065fd4]/20 dark:hover:bg-[#3ea6ff]/20 rounded-full p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* "Did you mean" spelling correction */}
       {!isLoading && results.length > 0 && searchQuery && (

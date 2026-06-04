@@ -219,6 +219,11 @@ export default function VideoPlayerView() {
   const autoplayCancelledRef = useRef(false);
   const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [chapterOverlay, setChapterOverlay] = useState<string | null>(null);
+  const [chapterOverlayFading, setChapterOverlayFading] = useState(false);
+  const [showAllChapters, setShowAllChapters] = useState(false);
+  const chapterOverlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const baseComments = useMemo(() => {
     if (!currentVideo) return [];
@@ -446,10 +451,29 @@ export default function VideoPlayerView() {
     }
   };
 
-  const handleChapterClick = (seconds: number) => {
+  const handleChapterClick = (seconds: number, chapterIndex?: number) => {
     const iframe = document.querySelector('iframe');
     if (iframe) {
       iframe.src = `https://www.youtube.com/embed/${currentVideo.id}?autoplay=1&rel=0&start=${seconds}`;
+    }
+    if (chapterIndex !== undefined) {
+      setCurrentChapterIndex(chapterIndex);
+      // Show chapter overlay
+      const chapter = chapters[chapterIndex];
+      if (chapter) {
+        if (chapterOverlayTimeoutRef.current) {
+          clearTimeout(chapterOverlayTimeoutRef.current);
+        }
+        setChapterOverlayFading(false);
+        setChapterOverlay(chapter.label);
+        chapterOverlayTimeoutRef.current = setTimeout(() => {
+          setChapterOverlayFading(true);
+          setTimeout(() => {
+            setChapterOverlay(null);
+            setChapterOverlayFading(false);
+          }, 300);
+        }, 3000);
+      }
     }
     toast.info(`Jumped to ${formatSeconds(seconds)}`);
   };
@@ -575,6 +599,17 @@ export default function VideoPlayerView() {
             onLoad={() => setIsVideoLoading(false)}
           />
 
+          {/* Chapter overlay - shows current chapter name on chapter change */}
+          {chapterOverlay && (
+            <div
+              className={`absolute bottom-14 left-3 z-20 bg-black/70 text-white text-sm px-2 py-1 rounded ${
+                chapterOverlayFading ? 'animate-chapter-overlay-out' : 'animate-chapter-overlay-in'
+              }`}
+            >
+              {chapterOverlay}
+            </div>
+          )}
+
           {/* Autoplay countdown overlay */}
           {autoplayCountdown !== null && autoplayNextVideo && (
             <div className="absolute bottom-4 right-4 z-20 bg-black/90 rounded-lg p-3 flex items-center gap-3 min-w-[280px] max-w-[360px] animate-fade-in shadow-2xl border border-gray-700/50">
@@ -638,19 +673,60 @@ export default function VideoPlayerView() {
           Watch on YouTube
         </a>
 
-        {/* Chapter markers - horizontal scrollable row */}
+        {/* Chapter progress bar */}
         {chapters.length > 0 && (
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {chapters.map((chapter, index) => (
-              <button
-                key={index}
-                onClick={() => handleChapterClick(chapter.seconds)}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors text-sm"
-              >
-                <span className="text-blue-600 dark:text-blue-400 font-medium text-[12px]">{chapter.time}</span>
-                <span className="text-gray-800 dark:text-gray-200 text-[12px]">{chapter.label}</span>
-              </button>
-            ))}
+          <div className="mt-3">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-1 overflow-hidden flex">
+              {chapters.map((chapter, index) => {
+                // Calculate duration for each chapter
+                const nextChapter = chapters[index + 1];
+                const chapterDuration = nextChapter
+                  ? nextChapter.seconds - chapter.seconds
+                  : 60; // Default 60s for last chapter
+                const totalDuration = chapters.reduce((acc, ch, i) => {
+                  const next = chapters[i + 1];
+                  return acc + (next ? next.seconds - ch.seconds : 60);
+                }, 0);
+                const widthPercent = (chapterDuration / totalDuration) * 100;
+                const isCompleted = index < currentChapterIndex;
+                const isCurrent = index === currentChapterIndex;
+                return (
+                  <div
+                    key={index}
+                    className={`h-full transition-all duration-300 ${
+                      isCompleted
+                        ? 'bg-red-600'
+                        : isCurrent
+                          ? 'bg-red-400 animate-chapter-pulse'
+                          : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                    style={{ width: `${widthPercent}%` }}
+                    title={`${chapter.label} (${chapter.time})`}
+                  />
+                );
+              })}
+            </div>
+            {/* Chapter markers - horizontal scrollable row */}
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+              {chapters.map((chapter, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleChapterClick(chapter.seconds, index)}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-sm ${
+                    index === currentChapterIndex
+                      ? 'bg-red-100 dark:bg-red-900/30 ring-1 ring-red-400 dark:ring-red-600'
+                      : 'bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
+                  }`}
+                >
+                  <span className={`font-medium text-[12px] ${
+                    index === currentChapterIndex
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-blue-600 dark:text-blue-400'
+                  }`}>{chapter.time}</span>
+                  <span className="text-gray-800 dark:text-gray-200 text-[12px]">{chapter.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -686,7 +762,7 @@ export default function VideoPlayerView() {
                 onClick={handleSubscribe}
                 className={`rounded-full text-sm font-medium px-4 h-9 transition-colors ripple-container ${
                   isSubscribed
-                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                     : 'bg-[#ff0000] hover:bg-[#cc0000] text-white'
                 }`}
               >
@@ -892,6 +968,73 @@ export default function VideoPlayerView() {
               <div className="text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line">
                 {formatDescriptionText(currentVideo.description)}
               </div>
+
+              {/* Chapter list in description */}
+              {chapters.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">{chapters.length} Chapters</h4>
+                    {chapters.length > 4 && (
+                      <button
+                        onClick={() => setShowAllChapters(!showAllChapters)}
+                        className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {showAllChapters ? 'Show less' : 'View all'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    {(showAllChapters ? chapters : chapters.slice(0, 4)).map((chapter, index) => {
+                      const nextChapter = chapters[index + 1];
+                      const chapterDuration = nextChapter
+                        ? nextChapter.seconds - chapter.seconds
+                        : 60;
+                      const isCurrent = index === currentChapterIndex;
+                      const formatDuration = (secs: number) => {
+                        const m = Math.floor(secs / 60);
+                        const s = secs % 60;
+                        return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
+                      };
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleChapterClick(chapter.seconds, index)}
+                          className={`w-full flex items-center gap-3 px-2 py-1.5 rounded-md transition-colors text-left group ${
+                            isCurrent
+                              ? 'bg-red-50 dark:bg-red-900/20'
+                              : 'hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
+                          }`}
+                        >
+                          {/* Red bar for current chapter */}
+                          {isCurrent && (
+                            <div className="w-1 h-8 bg-red-600 rounded-full shrink-0" />
+                          )}
+                          {/* Timestamp */}
+                          <span className={`text-[12px] font-medium shrink-0 ${
+                            isCurrent
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-blue-600 dark:text-blue-400'
+                          }`}>
+                            {chapter.time}
+                          </span>
+                          {/* Chapter title */}
+                          <span className={`text-[12px] flex-1 min-w-0 truncate ${
+                            isCurrent
+                              ? 'font-semibold text-gray-900 dark:text-white'
+                              : 'text-gray-800 dark:text-gray-200'
+                          }`}>
+                            {chapter.label}
+                          </span>
+                          {/* Duration */}
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400 shrink-0">
+                            {formatDuration(chapterDuration)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Music info section - shown for Music category */}
               {currentVideo.category === 'Music' && (

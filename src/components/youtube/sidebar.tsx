@@ -271,11 +271,11 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
+          <Separator className="my-2 bg-gray-200 dark:bg-gray-700 transition-all duration-300" />
 
           {/* You section */}
           <div className="flex items-center gap-1 px-3 mb-0.5">
-            <span className="text-[13px] text-gray-800 dark:text-gray-200 font-medium uppercase tracking-wide">You</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-200 font-medium uppercase tracking-wider">You</span>
             <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
           {youItems.map((item) => (
@@ -293,10 +293,10 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
+          <Separator className="my-2 bg-gray-200 dark:bg-gray-700 transition-all duration-300" />
 
           {/* Explore section */}
-          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium uppercase tracking-wide">Explore</h3>
+          <h3 className="px-3 mb-0.5 text-[11px] text-gray-500 dark:text-gray-200 font-medium uppercase tracking-wider">Explore</h3>
           {exploreItems.map((item) => (
             <button
               key={item.label}
@@ -308,10 +308,10 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
+          <Separator className="my-2 bg-gray-200 dark:bg-gray-700 transition-all duration-300" />
 
           {/* More from YouTube */}
-          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium uppercase tracking-wide">More from YouTube</h3>
+          <h3 className="px-3 mb-0.5 text-[11px] text-gray-500 dark:text-gray-200 font-medium uppercase tracking-wider">More from YouTube</h3>
           {moreFromYouTubeItems.map((item) => (
             <button
               key={item.label}
@@ -323,7 +323,7 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
+          <Separator className="my-2 bg-gray-200 dark:bg-gray-700 transition-all duration-300" />
 
           {/* Settings & more */}
           {moreItems.map((item) => (
@@ -337,7 +337,7 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700" />
+          <Separator className="my-2 bg-gray-200 dark:bg-gray-700" />
 
           {/* Footer */}
           <div className="px-3 py-2">

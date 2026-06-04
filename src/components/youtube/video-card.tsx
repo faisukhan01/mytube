@@ -47,8 +47,14 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   const [fallbackAttempted, setFallbackAttempted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const thumbnailSwapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Generate preview thumbnail URL (different frame)
+  const videoId = video.id;
+  const previewThumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
   const isWatchLater = watchLater.includes(video.id);
   const isLiked = likedVideos.includes(video.id);
 
@@ -60,8 +66,12 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    // Show enhanced preview after 1.5s for grid layout
     if (layout === 'grid') {
+      // Thumbnail swap preview after 500ms
+      thumbnailSwapTimeoutRef.current = setTimeout(() => {
+        setIsPreviewing(true);
+      }, 500);
+      // Show enhanced tooltip after 1.5s
       previewTimeoutRef.current = setTimeout(() => {
         setShowPreview(true);
       }, 1500);
@@ -71,11 +81,15 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   const handleMouseLeave = () => {
     setIsHovered(false);
     setShowPreview(false);
+    setIsPreviewing(false);
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
     if (previewTimeoutRef.current) {
       clearTimeout(previewTimeoutRef.current);
+    }
+    if (thumbnailSwapTimeoutRef.current) {
+      clearTimeout(thumbnailSwapTimeoutRef.current);
     }
   };
 
@@ -256,7 +270,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
         {/* Info */}
         <div className="flex-1 min-w-0 py-0.5">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5 flex items-start gap-1.5">
+          <h3 className="text-sm font-medium text-[#0f0f0f] dark:text-white line-clamp-2 leading-5 flex items-start gap-1.5">
             <span className="flex-1">{video.title}</span>
             {isRecentlyUploaded && (
               <span className="shrink-0 inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5">
@@ -295,7 +309,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -329,28 +343,55 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
       {/* Thumbnail */}
       <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
         {!imageError ? (
-          <img
-            src={video.thumbnail}
-            alt={video.title}
-            className="w-full h-full object-cover object-center transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105"
-            onError={(e) => {
-              const img = e.currentTarget;
-              if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
-                setFallbackAttempted(true);
-                img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
-              } else {
-                setImageError(true);
-              }
-            }}
-            loading="lazy"
-          />
+          <>
+            {/* Primary thumbnail */}
+            <img
+              src={video.thumbnail}
+              alt={video.title}
+              className={`w-full h-full object-cover object-center transition-all duration-300 ease-out ${
+                isPreviewing ? 'opacity-0' : 'opacity-100'
+              }`}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
+                  setFallbackAttempted(true);
+                  img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
+                } else {
+                  setImageError(true);
+                }
+              }}
+              loading="lazy"
+            />
+            {/* Preview thumbnail (swapped on hover) */}
+            <img
+              src={previewThumbnailUrl}
+              alt=""
+              className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300 ease-out ${
+                isPreviewing ? 'opacity-100' : 'opacity-0'
+              }`}
+              aria-hidden="true"
+              loading="lazy"
+            />
+          </>
         ) : (
           <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
+        )}
+        {/* Preview badge - shown during hover preview */}
+        {isPreviewing && !imageError && (
+          <span className="absolute top-1.5 left-1.5 bg-black/80 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-[3px] backdrop-blur-sm z-10">
+            Preview
+          </span>
+        )}
+        {/* Preview progress bar - animates during hover preview */}
+        {isPreviewing && !imageError && (
+          <div className="absolute bottom-0 left-0 right-0 z-10">
+            <div className="h-[2px] bg-red-600 animate-preview-progress" />
+          </div>
         )}
         {/* Animated duration badge */}
         <span className={`absolute bottom-1.5 right-1.5 bg-black/80 duration-badge-blur text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
           isHovered ? 'bg-black scale-110 shadow-lg' : ''
-        }`}>
+        } ${isPreviewing ? 'z-10' : ''}`}>
           {video.duration}
         </span>
         {video.duration === 'LIVE' && (
@@ -369,7 +410,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         {/* Subtle hover brightness change */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/[0.03] transition-colors duration-300 rounded-xl" />
         {/* Quick action overlay buttons */}
-        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out translate-y-2 group-hover:translate-y-0">
+        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out translate-y-2 group-hover:translate-y-0 z-10">
           <button
             onClick={handleWatchLater}
             className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-all duration-200 hover:scale-105"
@@ -386,9 +427,9 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           </button>
         </div>
         {/* Watch progress bar */}
-        {progress > 0 && !isCurrentlyPlaying ? (
+        {progress > 0 && !isCurrentlyPlaying && !isPreviewing ? (
           <div className="absolute bottom-0 left-0 watched-progress-thin" style={{ width: `${progress}%` }} />
-        ) : !isCurrentlyPlaying ? (
+        ) : !isCurrentlyPlaying && !isPreviewing ? (
           <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gray-200 dark:bg-gray-700" />
         ) : null}
       </div>
@@ -453,7 +494,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
         {/* Text */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-[13px] sm:text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-4 sm:leading-5 flex items-start gap-1.5">
+          <h3 className="text-[13px] sm:text-sm font-medium text-[#0f0f0f] dark:text-white line-clamp-2 leading-4 sm:leading-5 flex items-start gap-1.5">
             <span className="flex-1">{video.title}</span>
             {isRecentlyUploaded && (
               <span className="shrink-0 inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5">
@@ -486,7 +527,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-fit"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

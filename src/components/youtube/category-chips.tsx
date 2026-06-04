@@ -66,18 +66,18 @@ export default function CategoryChips() {
           className="flex items-center gap-3 overflow-x-auto px-4 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const isActive = selectedCategory === category;
             const isAnimating = animatingChip === category;
             return (
               <button
                 key={category}
                 onClick={() => handleChipClick(category)}
-                className={`shrink-0 px-3 rounded-full text-sm font-medium transition-all duration-200 h-8 flex items-center justify-center border ${
+                className={`shrink-0 px-3 py-1.5 rounded-full text-[13px] transition-all duration-200 flex items-center justify-center ${
                   isActive
-                    ? 'bg-[#0f0f0f] text-white dark:bg-white dark:text-black hover:bg-[#272727] dark:hover:bg-gray-200 shadow-sm border-[#0f0f0f] dark:border-white'
-                    : 'bg-[#f2f2f2] text-[#0f0f0f] dark:bg-[#272727] dark:text-[#f1f1f1] hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f] border-[#f2f2f2] dark:border-[#272727]'
-                } ${isAnimating ? 'animate-bounce-in' : ''}`}
+                    ? 'font-medium bg-[#0f0f0f] text-white dark:bg-white dark:text-black hover:bg-[#272727] dark:hover:bg-gray-200 shadow-sm'
+                    : 'bg-[#f2f2f2] text-[#0f0f0f] dark:bg-[#272727] dark:text-[#f1f1f1] hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]'
+                } ${isAnimating ? 'animate-bounce-in' : ''} ${index === 0 ? 'first:ml-0' : ''}`}
               >
                 {category}
               </button>

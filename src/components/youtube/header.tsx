@@ -24,6 +24,9 @@ import {
   Trash2,
   LogIn,
   ArrowUpRight,
+  MessageCircle,
+  Users,
+  TrendingUp,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -38,7 +41,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import AuthDialog from './auth-dialog';
 import UploadDialog from './upload-dialog';
@@ -73,7 +75,208 @@ export function useTheme() {
   return { isDark, toggleTheme };
 }
 
-const sampleNotifications = [
+// Notification category types
+type NotificationCategory = 'upload' | 'live' | 'comment' | 'subscription' | 'trending';
+
+interface NotificationItem {
+  id: string;
+  channelName: string;
+  channelInitial: string;
+  channelColor: string;
+  text: string;
+  timeAgo: string;
+  thumbnail: string;
+  read: boolean;
+  category: NotificationCategory;
+}
+
+// Pool of notification templates for auto-generation
+const notificationTemplates: {
+  channelName: string;
+  channelInitial: string;
+  channelColor: string;
+  text: string;
+  category: NotificationCategory;
+}[] = [
+  {
+    channelName: 'MrBeast',
+    channelInitial: 'M',
+    channelColor: '#E91E63',
+    text: 'uploaded: I Built 100 Houses and Gave Them Away',
+    category: 'upload',
+  },
+  {
+    channelName: 'Marques Brownlee',
+    channelInitial: 'M',
+    channelColor: '#FF5722',
+    text: 'uploaded: iPhone 17 Pro Review: Everything Changed!',
+    category: 'upload',
+  },
+  {
+    channelName: 'Fireship',
+    channelInitial: 'F',
+    channelColor: '#FF9800',
+    text: 'is live: Let\'s Build a Full Stack App in 10 Minutes',
+    category: 'live',
+  },
+  {
+    channelName: 'Veritasium',
+    channelInitial: 'V',
+    channelColor: '#4CAF50',
+    text: 'uploaded: The Most Satisfying Math Problem Ever',
+    category: 'upload',
+  },
+  {
+    channelName: 'TechLinked',
+    channelInitial: 'T',
+    channelColor: '#2196F3',
+    text: 'replied to your comment: "Great point about the GPU pricing!"',
+    category: 'comment',
+  },
+  {
+    channelName: 'Kurzgesagt',
+    channelInitial: 'K',
+    channelColor: '#00BCD4',
+    text: 'uploaded: What If The Sun Disappeared?',
+    category: 'upload',
+  },
+  {
+    channelName: 'The Coding Train',
+    channelInitial: 'T',
+    channelColor: '#9C27B0',
+    text: 'is live: Coding Challenge: Fractal Trees',
+    category: 'live',
+  },
+  {
+    channelName: 'Linus Tech Tips',
+    channelInitial: 'L',
+    channelColor: '#F44336',
+    text: 'uploaded: This GPU Changes Everything',
+    category: 'upload',
+  },
+  {
+    channelName: '3Blue1Brown',
+    channelInitial: '3',
+    channelColor: '#1B5E20',
+    text: 'uploaded: But What Is a Neural Network?',
+    category: 'upload',
+  },
+  {
+    channelName: 'Mark Rober',
+    channelInitial: 'M',
+    channelColor: '#E65100',
+    text: 'uploaded: World\'s Largest Nerf Gun 2.0',
+    category: 'upload',
+  },
+  {
+    channelName: 'PewDiePie',
+    channelInitial: 'P',
+    channelColor: '#AB47BC',
+    text: 'uploaded: reacting to my old videos (cringe)',
+    category: 'upload',
+  },
+  {
+    channelName: 'ScienceMax',
+    channelInitial: 'S',
+    channelColor: '#00897B',
+    text: 'replied to your comment: "Thanks for watching!"',
+    category: 'comment',
+  },
+  {
+    channelName: 'MrBeast',
+    channelInitial: 'M',
+    channelColor: '#E91E63',
+    text: 'is live: $1 vs $1,000,000 Challenge RIGHT NOW',
+    category: 'live',
+  },
+  {
+    channelName: 'Marques Brownlee',
+    channelInitial: 'M',
+    channelColor: '#FF5722',
+    text: 'uploaded: Tesla Cybertruck 2025 Update',
+    category: 'upload',
+  },
+  {
+    channelName: 'Traversy Media',
+    channelInitial: 'T',
+    channelColor: '#1565C0',
+    text: 'uploaded: Next.js 16 Crash Course 2025',
+    category: 'upload',
+  },
+  {
+    channelName: 'YouTube',
+    channelInitial: 'Y',
+    channelColor: '#FF0000',
+    text: 'Your video "Summer Vlog" is now trending!',
+    category: 'trending',
+  },
+  {
+    channelName: 'Gordon Ramsay',
+    channelInitial: 'G',
+    channelColor: '#BF360C',
+    text: 'uploaded: Perfect Steak in 5 Minutes',
+    category: 'upload',
+  },
+  {
+    channelName: 'EpicMusicVids',
+    channelInitial: 'E',
+    channelColor: '#7B1FA2',
+    text: 'is live: 24/7 Lofi Hip Hop Radio',
+    category: 'live',
+  },
+];
+
+// Get the category icon for a notification
+function getCategoryIcon(category: NotificationCategory) {
+  switch (category) {
+    case 'upload':
+      return Upload;
+    case 'live':
+      return Radio;
+    case 'comment':
+      return MessageCircle;
+    case 'subscription':
+      return Users;
+    case 'trending':
+      return TrendingUp;
+    default:
+      return Bell;
+  }
+}
+
+// Get category accent color
+function getCategoryColor(category: NotificationCategory) {
+  switch (category) {
+    case 'upload':
+      return '#065fd4';
+    case 'live':
+      return '#cc0000';
+    case 'comment':
+      return '#2ba640';
+    case 'subscription':
+      return '#7b1fa2';
+    case 'trending':
+      return '#ff6d00';
+    default:
+      return '#606060';
+  }
+}
+
+// Random thumbnails for generated notifications
+const randomThumbnails = [
+  'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
+  'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg',
+  'https://img.youtube.com/vi/9bZkp7q19f0/mqdefault.jpg',
+  'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg',
+  'https://img.youtube.com/vi/RgKAFK5djSk/mqdefault.jpg',
+  'https://img.youtube.com/vi/OPf0YbXqDm0/mqdefault.jpg',
+  'https://img.youtube.com/vi/CevxZvSJLk8/mqdefault.jpg',
+  'https://img.youtube.com/vi/hT_nvWreIhg/mqdefault.jpg',
+  'https://img.youtube.com/vi/YQHsXMglC9A/mqdefault.jpg',
+  'https://img.youtube.com/vi/fJ9rUzIMcZQ/mqdefault.jpg',
+];
+
+const initialNotifications: NotificationItem[] = [
   {
     id: '1',
     channelName: 'TechVision',
@@ -83,6 +286,7 @@ const sampleNotifications = [
     timeAgo: '2 hours ago',
     thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg',
     read: false,
+    category: 'upload',
   },
   {
     id: '2',
@@ -93,6 +297,7 @@ const sampleNotifications = [
     timeAgo: '5 hours ago',
     thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg',
     read: false,
+    category: 'live',
   },
   {
     id: '3',
@@ -103,8 +308,11 @@ const sampleNotifications = [
     timeAgo: '1 day ago',
     thumbnail: 'https://img.youtube.com/vi/Ke90Tje7VS9A/mqdefault.jpg',
     read: true,
+    category: 'upload',
   },
 ];
+
+let notificationIdCounter = 4;
 
 export default function YouTubeHeader() {
   const {
@@ -128,11 +336,11 @@ export default function YouTubeHeader() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [voiceText, setVoiceText] = useState('');
   const [isListening, setIsListening] = useState(true);
-  const [notifications, setNotifications] = useState(sampleNotifications);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [themeRotating, setThemeRotating] = useState(false);
-  const [badgeBouncing, setBadgeBouncing] = useState(false);
+  const [bellBouncing, setBellBouncing] = useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length;
   const prevUnreadCountRef = useRef(unreadCount);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -140,6 +348,7 @@ export default function YouTubeHeader() {
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const mobileSuggestionsRef = useRef<HTMLDivElement>(null);
+  const notificationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     setInputValue(searchQuery);
@@ -154,11 +363,69 @@ export default function YouTubeHeader() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Auto-generate notifications every 45 seconds
+  useEffect(() => {
+    notificationIntervalRef.current = setInterval(() => {
+      const template = notificationTemplates[Math.floor(Math.random() * notificationTemplates.length)];
+      const thumbnail = randomThumbnails[Math.floor(Math.random() * randomThumbnails.length)];
+      const newNotification: NotificationItem = {
+        id: `notif-${notificationIdCounter++}`,
+        channelName: template.channelName,
+        channelInitial: template.channelInitial,
+        channelColor: template.channelColor,
+        text: template.text,
+        timeAgo: 'Just now',
+        thumbnail,
+        read: false,
+        category: template.category,
+      };
+
+      setNotifications((prev) => {
+        const updated = [newNotification, ...prev];
+        // Cap at 10 notifications
+        if (updated.length > 10) {
+          return updated.slice(0, 10);
+        }
+        return updated;
+      });
+
+      // Show toast notification
+      toast.custom(() => (
+        <div className="bg-white dark:bg-[#282828] border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl px-4 py-3 flex items-center gap-3 max-w-sm">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0"
+            style={{ backgroundColor: template.channelColor }}
+          >
+            {template.channelInitial}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm text-gray-900 dark:text-white truncate">
+              <span className="font-medium">{template.channelName}</span>
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {template.text}
+            </p>
+          </div>
+        </div>
+      ), { duration: 4000 });
+
+      // Bounce the bell icon
+      setBellBouncing(true);
+      setTimeout(() => setBellBouncing(false), 600);
+    }, 45000);
+
+    return () => {
+      if (notificationIntervalRef.current) {
+        clearInterval(notificationIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Track notification count changes for badge bounce
   useEffect(() => {
     if (unreadCount !== prevUnreadCountRef.current && prevUnreadCountRef.current !== undefined) {
-      setBadgeBouncing(true);
-      const timer = setTimeout(() => setBadgeBouncing(false), 400);
+      setBellBouncing(true);
+      const timer = setTimeout(() => setBellBouncing(false), 600);
       prevUnreadCountRef.current = unreadCount;
       return () => clearTimeout(timer);
     }
@@ -299,6 +566,12 @@ export default function YouTubeHeader() {
 
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
   };
 
   return (
@@ -492,9 +765,13 @@ export default function YouTubeHeader() {
           <Popover>
             <PopoverTrigger asChild>
               <button className={`${user ? 'flex' : 'hidden sm:flex'} p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors relative`} aria-label="Notifications">
-                <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                <Bell className={`w-5 h-5 text-gray-700 dark:text-gray-300 transition-transform duration-300 ${bellBouncing ? 'scale-125' : 'scale-100'}`} style={{ transformOrigin: 'top center' }} />
                 {unreadCount > 0 && (
-                  <span className={`absolute top-0.5 right-0.5 bg-red-600 text-white text-[10px] font-medium rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 ${badgeBouncing ? 'animate-pulse-badge' : ''}`}>{unreadCount}</span>
+                  <span className={`absolute top-0.5 right-0.5 bg-red-600 text-white text-[10px] font-medium rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 ${bellBouncing ? 'scale-125' : ''} transition-transform duration-300`}>{unreadCount}</span>
+                )}
+                {/* Red dot indicator when unread but bell not bouncing */}
+                {unreadCount > 0 && !bellBouncing && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-600 rounded-full ring-2 ring-white dark:ring-[#0f0f0f]" />
                 )}
               </button>
             </PopoverTrigger>
@@ -510,35 +787,59 @@ export default function YouTubeHeader() {
               </div>
               <div className="max-h-[420px] overflow-y-auto">
                 {notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#3f3f3f] cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                    >
+                  notifications.map((notification) => {
+                    const CategoryIcon = getCategoryIcon(notification.category);
+                    const categoryColor = getCategoryColor(notification.category);
+                    return (
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0"
-                        style={{ backgroundColor: notification.channelColor }}
+                        key={notification.id}
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        className={`flex gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#3f3f3f] cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`}
                       >
-                        {notification.channelInitial}
+                        <div className="relative shrink-0">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                            style={{ backgroundColor: notification.channelColor }}
+                          >
+                            {notification.channelInitial}
+                          </div>
+                          {/* Category icon badge */}
+                          <div
+                            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-[#282828]"
+                            style={{ backgroundColor: categoryColor }}
+                          >
+                            <CategoryIcon className="w-3 h-3 text-white" />
+                          </div>
+                          {/* Live category gets a pulsing red dot */}
+                          {notification.category === 'live' && (
+                            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-600 rounded-full ring-2 ring-white dark:ring-[#282828] animate-pulse" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            <span className="font-medium">{notification.channelName}</span> {notification.text}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{notification.timeAgo}</p>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 shrink-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDismissNotification(notification.id);
+                            }}
+                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full"
+                            aria-label="Dismiss notification"
+                          >
+                            <X className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                          </button>
+                          {/* Unread indicator dot */}
+                          {!notification.read && (
+                            <span className="w-2 h-2 rounded-full bg-[#065fd4]" />
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          <span className="font-medium">{notification.channelName}</span> {notification.text}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{notification.timeAgo}</p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDismissNotification(notification.id);
-                        }}
-                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full shrink-0 self-start"
-                        aria-label="Dismiss notification"
-                      >
-                        <X className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      </button>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="flex flex-col items-center py-12">
                     <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />

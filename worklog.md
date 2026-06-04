@@ -1914,3 +1914,239 @@ Unresolved Issues / Next Phase Priorities:
 - Could add YouTube Music and YouTube Kids sections
 - Could add video upload simulation with drag-and-drop
 - Mobile responsive layout could be further refined
+
+---
+Task ID: 5c + 4c
+Agent: Hover Preview & Chapters UI Agent
+Task: Add video hover preview (thumbnail swap) effect and improve video chapters UI in the player
+
+Work Log:
+- Added CSS animations to globals.css:
+  - @keyframes previewProgress: animates width from 0 to 100% over 3s for hover preview progress bar
+  - @keyframes chapterPulse: subtle opacity pulse for current chapter in progress bar
+  - @keyframes chapterOverlayFadeIn/chapterOverlayFadeOut: fade animations for chapter name overlay on video
+  - .animate-preview-progress: 3s linear forwards animation class
+  - .animate-chapter-pulse: 2s ease-in-out infinite pulse
+  - .animate-chapter-overlay-in / .animate-chapter-overlay-out: 0.3s ease fade in/out
+- Updated video-card.tsx with hover preview effect:
+  - Added isPreviewing state that activates after 500ms hover (separate from showPreview at 1.5s)
+  - Added thumbnailSwapTimeoutRef for 500ms delay
+  - Added previewThumbnailUrl using mqdefault.jpg suffix (different frame from hqdefault.jpg)
+  - Stacked two img elements with absolute positioning for crossfade
+  - Primary thumbnail transitions to opacity-0 when previewing, preview transitions to opacity-100
+  - Added "Preview" badge in top-left corner during hover preview (bg-black/80, backdrop-blur)
+  - Added red 2px progress bar at bottom during preview (bg-red-600 animate-preview-progress)
+  - Watch progress bar hidden during preview to avoid conflict
+  - Duration badge gets z-10 during preview to stay above progress bar
+  - All existing features preserved: tooltip after 1.5s, scale animation, watch later/queue buttons
+- Updated video-player-view.tsx with chapter UI enhancements:
+  - Added currentChapterIndex state (default 0) for tracking active chapter
+  - Added chapterOverlay state for showing chapter name overlay on video
+  - Added chapterOverlayFading state for fade-out animation
+  - Added showAllChapters state for toggle in chapter list
+  - Added chapterOverlayTimeoutRef for 3-second auto-hide
+  - Enhanced handleChapterClick to accept optional chapterIndex parameter
+  - When clicking a chapter: updates currentChapterIndex, shows overlay with chapter name, auto-hides after 3s
+  - Added visual chapter progress bar below video title:
+    - Horizontal bar (h-1 rounded-full) with segments proportional to chapter duration
+    - Completed chapters: bg-red-600, Current chapter: bg-red-400 with animate-chapter-pulse, Upcoming: bg-gray-300/dark:bg-gray-600
+    - Hover tooltips showing chapter name and timestamp
+  - Enhanced chapter markers row with active chapter highlighting:
+    - Current chapter has bg-red-100/dark:bg-red-900/30 with ring-1 ring-red-400
+    - Current chapter timestamp text is red instead of blue
+  - Added chapter overlay on video player:
+    - Positioned bottom-14 left-3 above YouTube controls
+    - bg-black/70 text-white text-sm px-2 py-1 rounded
+    - Animates in with chapterOverlayFadeIn, fades out with chapterOverlayFadeOut after 3s
+  - Added structured chapter list in expanded description:
+    - Shows "N Chapters" heading with "View all"/"Show less" toggle for >4 chapters
+    - Each chapter row: timestamp (blue/red for current), chapter title, duration
+    - Currently playing chapter has red bar on left, bg-red-50/dark:bg-red-900/20, bold text
+    - All rows are clickable to jump to that chapter
+- All lint checks pass with zero errors
+- Dev server compiles successfully
+
+Stage Summary:
+- Video card hover preview mimics YouTube's animated thumbnail preview
+  - 500ms hover triggers thumbnail crossfade (hqdefault → mqdefault)
+  - "Preview" badge and red progress bar appear during hover
+  - Coexists with 1.5s tooltip preview
+- Video player chapters UI significantly enhanced
+  - Visual progress bar showing chapter segments with color-coded states
+  - Active chapter highlighting in both progress bar and chapter chips
+  - Chapter name overlay on video (auto-fades after 3s)
+  - Structured chapter list in description with "View all" toggle
+  - Currently playing chapter has distinct visual indicators
+- Zero lint errors, no compilation errors
+
+---
+Task ID: 5a + 5b
+Agent: Light Mode Polish + Category Chips Agent
+Task: Dramatically improve light mode styling across all components and refine category chips to be YouTube-accurate
+
+Work Log:
+- Updated header.tsx light mode styling:
+  - Changed border from border-gray-200/80 to solid border-gray-200 (removed transparency for crisper light mode border)
+  - Changed theme toggle icon from text-gray-700 to text-gray-600 (lighter, matching YouTube)
+  - Changed bell icon from text-gray-700 to text-gray-600 in light mode (consistent lighter icon color)
+  - Search bar border-[#ccc] and sign-in button border-[#065fd4] already correct
+- Updated sidebar.tsx light mode styling:
+  - Changed section headers ("You", "Explore", "More from YouTube") from text-gray-800 text-[13px] to text-gray-500 text-[11px] uppercase tracking-wider (matching YouTube's lighter, smaller section labels)
+  - Added explicit bg-gray-200 to all 5 separators for light mode (was using default which could be too subtle)
+- Updated video-card.tsx light mode styling:
+  - Changed title color from text-gray-900 to text-[#0f0f0f] in both list and grid layouts (YouTube's exact text color)
+  - Changed menu button icon from text-gray-700 to text-gray-600 in both list and grid layouts (lighter, matching other icons)
+  - Channel name (#606060), views text (#606060), hover bg, and duration badge already correct
+- Updated video-player-view.tsx light mode styling:
+  - Changed subscribed button from bg-gray-200 to bg-gray-100 (lighter, matching YouTube's subscribed state)
+  - Changed subscribed button hover from hover:bg-gray-300 to hover:bg-gray-200
+  - Unsubscribed button (bg-[#ff0000]), description (bg-gray-100), action buttons (bg-gray-100) already correct
+- Updated category-chips.tsx with YouTube-accurate refinements:
+  - Changed text size from text-sm (14px) to text-[13px] (matching YouTube exactly)
+  - Changed padding from px-3 h-8 to px-3 py-1.5 (YouTube's compact chip padding, removes fixed height)
+  - Removed border classes from both active and inactive chips (YouTube chips have no visible borders)
+  - Added font-medium only to active chip (inactive uses default weight)
+  - Added first:ml-0 to first chip for content alignment
+  - Active chip: bg-[#0f0f0f] text-white rounded-full (already correct)
+  - Inactive chip: bg-[#f2f2f2] text-[#0f0f0f] rounded-full (already correct)
+  - Chip hover: hover:bg-[#e5e5e5] (light) / hover:bg-[#3f3f3f] (dark) (already correct)
+  - Arrow buttons already have rounded-full shape
+  - Transition already present (transition-all duration-200)
+- Fixed pre-existing parsing error in video-player-view.tsx: combined split template literal closing backtick and JSX expression brace onto one line
+- All lint checks pass with zero errors
+
+Stage Summary:
+- Light mode header has crisper border and lighter icon colors matching YouTube
+- Sidebar section headers are smaller and lighter (text-gray-500 text-[11px] tracking-wider) like real YouTube
+- Video card titles use YouTube's exact #0f0f0f text color in light mode
+- Video card menu icons use text-gray-600 in light mode (lighter than before)
+- Subscribed button uses bg-gray-100 (lighter) in light mode
+- Category chips refined: text-[13px], py-1.5 padding, no borders, font-medium only on active
+- All changes are light-mode only — dark mode styling untouched
+- Zero lint errors, app compiles successfully
+
+---
+Task ID: 4a + 4b
+Agent: Search Filter & Notification Center Agent
+Task: Add search filter panel to search results and a live notification center
+
+Work Log:
+- Updated /src/components/youtube/search-results.tsx:
+  - Added YouTube-style filter dropdown panel that opens when clicking the "Filters" button
+  - Added 3 filter categories: Upload date (5 options), Type (5 options), Duration (3 options)
+  - Each filter option styled with text-[12px] font, active = bg-[#065fd4] text-white, inactive = text-gray-700/dark:text-gray-300 with hover
+  - Category headers: text-[11px] font-medium text-gray-500 uppercase tracking-wider
+  - Panel: w-[320px], bg-white/dark:bg-[#282828], border, rounded-lg, shadow-xl, p-4
+  - Radio-button behavior: only one option per category can be active at a time (toggle off if clicking same)
+  - Duration filter parses video duration strings (e.g., "3:33" → under 4 min, "15:20" → 4-20 min, "1:35:22" → over 20 min)
+  - Type filter: "Video" hides LIVE videos; other types kept visible since local data lacks type field
+  - Upload date filter: toggle for realism (can't filter local data by date)
+  - "Clear all filters" link at bottom when any filter is active
+  - Active filter chips shown below filter bar with X dismiss buttons
+  - Filters button highlights blue when panel is open or filters are active, with small blue dot indicator
+  - Click-outside detection closes the filter panel
+  - Results are filtered in the useMemo results computation
+- Updated /src/components/youtube/header.tsx:
+  - Added auto-generation of notifications every 45 seconds from a pool of 18 notification templates
+  - Templates include: new video uploads (MrBeast, MKBHD, Veritasium, Kurzgesagt, Linus Tech Tips, 3Blue1Brown, Mark Rober, PewDiePie, Gordon Ramsay, Traversy Media, Marques Brownlee), live streams (Fireship, The Coding Train, MrBeast, EpicMusicVids), comment replies (TechLinked, ScienceMax), trending alerts (YouTube)
+  - Each notification has: channelName, channelInitial, channelColor, text, timeAgo, thumbnail, read status, category
+  - Notification categories with icons: Upload (Upload icon), Live (Radio icon with pulsing red dot), Comment (MessageCircle icon), Subscription (Users icon), Trending (TrendingUp icon)
+  - Category icon badge overlaid on channel avatar (bottom-right) with color-coded backgrounds
+  - When new notification arrives: toast.custom shows notification preview for 4 seconds, bell icon scales to 125% and back (bounce animation), red dot indicator appears on bell
+  - Notifications capped at 10 (oldest removed when exceeding)
+  - Clicking a notification marks it as read (removes blue background, adds unread blue dot)
+  - Unread indicator: small blue dot next to dismiss button for unread notifications
+  - Live notifications get a pulsing red dot in addition to the category badge
+  - NotificationItem type and NotificationCategory type properly typed
+- All lint checks pass with zero errors
+- App compiles and runs successfully
+
+Stage Summary:
+- Search filter panel fully functional with YouTube-style dropdown, 3 categories, radio-button behavior, clear all, and duration filtering
+- Live notification center auto-generates notifications every 45 seconds with toast previews
+- Bell icon bounce animation and red dot unread indicators working
+- Notification categories with color-coded icon badges (Upload, Live, Comment, Subscription, Trending)
+- Mark as read on click functionality implemented
+- Notifications capped at 10 with auto-cleanup
+- Zero lint errors, app running successfully
+
+---
+Task ID: Session 5 - QA Assessment, Feature Enhancement & Styling Polish
+Agent: Main Agent
+Task: Assess project status, perform QA, add new features, improve styling, update worklog
+
+Work Log:
+- Read worklog.md and assessed current status: YouTube clone rated 7/10 (homepage), 8/10 (video player)
+- Ran agent-browser QA with VLM analysis across all views:
+  - Homepage: 7/10 (stories row present but VLM missed due to scroll, "1 Issue" badge, PK suffix)
+  - Video player: 7-8/10 (action buttons present and styled correctly)
+  - Search results: 8/10 (highly realistic)
+  - Shorts player: 8/10 (close to real YouTube Shorts)
+
+- Launched 3 parallel subagent tasks:
+
+  Subagent 4a + 4b - Search Filter Panel & Live Notification Center:
+  - Added YouTube-style search filter dropdown with 3 categories:
+    - Upload date: Last hour, Today, This week, This month, This year
+    - Type: Video, Channel, Playlist, Movie, Show
+    - Duration: Under 4 minutes, 4-20 minutes, Over 20 minutes
+  - Radio-button behavior (one per category), active filters show as chips with X dismiss
+  - Duration filtering actually works (parses duration strings and filters results)
+  - "Clear all filters" link, filter button highlights when active
+  - Auto-generated notifications every 45 seconds from pool of 18 templates
+  - Toast notification on new arrival, bell icon bounce animation
+  - Red dot indicator for unread, category icons (Upload, Live, Comment, Subscription, Trending)
+  - Mark as read on click, cap at 10 notifications
+
+  Subagent 5a + 5b - Light Mode Styling & Category Chips:
+  - Header: Crisper border (border-gray-200), lighter icon colors (text-gray-600)
+  - Sidebar: Section headers changed to text-gray-500 text-[11px] uppercase tracking-wider (matching YouTube)
+  - Separators: Added explicit bg-gray-200 for light mode
+  - Video cards: Title color changed to text-[#0f0f0f] (YouTube exact), menu icon text-gray-600
+  - Video player: Subscribed button bg-gray-100 (lighter), hover:bg-gray-200
+  - Category chips: text-[13px] (YouTube exact), px-3 py-1.5 (compact), removed borders, font-medium on active only
+  - First chip: Added first:ml-0 for alignment
+
+  Subagent 5c + 4c - Video Hover Preview & Chapters UI:
+  - Video hover preview: After 500ms hover, thumbnail crossfades to mqdefault.jpg
+  - "Preview" badge appears top-left, red progress bar animates over 3 seconds
+  - Stacked img elements with CSS opacity transitions (0.3s ease)
+  - Coexists with tooltip (500ms preview, 1.5s tooltip)
+  - Chapter progress bar: Segmented horizontal bar below title, proportional widths
+  - Completed chapters red, current pulses lighter red, upcoming gray
+  - Chapter chips highlight active chapter with red background
+  - Chapter overlay on video: Shows chapter name bottom-left, fades after 3 seconds
+  - Chapter list in description: Structured list with timestamp (blue/clickable), title, duration
+  - Current chapter has red bar on left, "View all"/"Show less" toggle for 4+ chapters
+
+- VLM verification after changes:
+  - Search results: 9/10 (up from 8/10)
+  - Video player action buttons: 8/10
+  - Homepage: 7/10 (consistent)
+  - Channel stories row confirmed visible at top of page
+  - All lint checks pass with zero errors
+
+Stage Summary:
+- YouTube clone rated 7-9/10 across all views (search results scoring highest at 9/10)
+- Search filter panel with real duration filtering (3 categories, radio-button, chips)
+- Live notification center with auto-generated notifications and bell bounce
+- Video hover preview with thumbnail crossfade and progress bar
+- Chapter progress bar, overlay, and structured chapter list in description
+- Light mode styling dramatically improved across header, sidebar, cards, player, chips
+- Category chips refined to YouTube-exact specs (13px, compact padding, no borders)
+- Zero lint errors, app compiles and runs successfully
+
+Current Project Status:
+- Feature-rich YouTube clone with 350+ videos, full auth, playlists, mini player
+- Search with filters, live notifications, chapter markers, hover preview
+- Light and dark mode both polished with YouTube-accurate styling
+- VLM-rated 7-9/10 across all views
+- All interactive elements functional
+
+Unresolved Issues / Next Phase Priorities:
+- Channel avatars use colored initials (YouTube API limitation)
+- Could add video upload simulation with drag-and-drop
+- Could add YouTube Music and YouTube Kids dedicated sections
+- Could add real-time trending data via WebSocket
+- Could improve mobile responsive layout further
+- Could add more granular search filters (HD, Creative Commons, etc.)
