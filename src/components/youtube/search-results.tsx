@@ -10,15 +10,18 @@ export default function SearchResults() {
   const { searchQuery, searchResults, setSearchResults } = useYouTubeStore();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [error, setError] = useState<string | null>(null);
 
   const filters = ['All', 'Videos', 'Channels', 'Playlists', 'Live'];
 
   const performSearch = useCallback(async (query: string) => {
     if (!query) return;
     setIsLoading(true);
+    setError(null);
     try {
       // Try the API first
       const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('Search failed');
       const data = await res.json();
       if (data.videos && data.videos.length > 0) {
         setSearchResults(data.videos);
@@ -29,8 +32,13 @@ export default function SearchResults() {
       }
     } catch {
       // Fallback to local search
-      const localResults = searchVideos(query);
-      setSearchResults(localResults);
+      try {
+        const localResults = searchVideos(query);
+        setSearchResults(localResults);
+      } catch {
+        setError('Something went wrong. Please try again.');
+        setSearchResults([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -45,6 +53,9 @@ export default function SearchResults() {
   const results = useMemo(() => {
     if (selectedFilter === 'Live') {
       return searchResults.filter((v: { duration: string }) => v.duration === 'LIVE');
+    }
+    if (selectedFilter === 'Videos') {
+      return searchResults.filter((v: { duration: string }) => v.duration !== 'LIVE');
     }
     return searchResults;
   }, [searchResults, selectedFilter]);
@@ -87,8 +98,25 @@ export default function SearchResults() {
         </div>
       )}
 
+      {/* Error state */}
+      {error && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-24 h-24 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-12 h-12 text-red-400 dark:text-red-500" />
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Search error</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{error}</p>
+          <button
+            onClick={() => performSearch(searchQuery)}
+            className="mt-4 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-black rounded-full text-sm font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Results */}
-      {!isLoading && results.length > 0 && (
+      {!isLoading && !error && results.length > 0 && (
         <div className="space-y-2">
           {results.map((video: { id: string }) => (
             <VideoCard key={video.id} video={video} layout="list" />
@@ -97,7 +125,7 @@ export default function SearchResults() {
       )}
 
       {/* No results */}
-      {!isLoading && results.length === 0 && searchQuery && (
+      {!isLoading && !error && results.length === 0 && searchQuery && (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="w-24 h-24 bg-gray-100 dark:bg-[#272727] rounded-full flex items-center justify-center mb-4">
             <Search className="w-12 h-12 text-gray-400 dark:text-gray-500" />

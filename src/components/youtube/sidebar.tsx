@@ -27,12 +27,14 @@ import {
   ListVideo,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 interface SidebarItem {
   icon: React.ReactNode;
   label: string;
   view?: string;
-  active?: boolean;
+  category?: string;
+  action?: () => void;
 }
 
 const mainItems: SidebarItem[] = [
@@ -51,34 +53,45 @@ const youItems: SidebarItem[] = [
 
 const exploreItems: SidebarItem[] = [
   { icon: <Flame className="w-5 h-5" />, label: 'Trending', view: 'trending' },
-  { icon: <ShoppingBag className="w-5 h-5" />, label: 'Shopping' },
-  { icon: <Music2 className="w-5 h-5" />, label: 'Music' },
-  { icon: <Film className="w-5 h-5" />, label: 'Movies' },
-  { icon: <Radio className="w-5 h-5" />, label: 'Live' },
-  { icon: <Gamepad2 className="w-5 h-5" />, label: 'Gaming' },
-  { icon: <Newspaper className="w-5 h-5" />, label: 'News' },
-  { icon: <Trophy className="w-5 h-5" />, label: 'Sports' },
-  { icon: <Lightbulb className="w-5 h-5" />, label: 'Learning' },
-  { icon: <Shirt className="w-5 h-5" />, label: 'Fashion & Beauty' },
+  { icon: <ShoppingBag className="w-5 h-5" />, label: 'Shopping', category: 'Shopping' },
+  { icon: <Music2 className="w-5 h-5" />, label: 'Music', category: 'Music' },
+  { icon: <Film className="w-5 h-5" />, label: 'Movies', category: 'Movies' },
+  { icon: <Radio className="w-5 h-5" />, label: 'Live', category: 'Live' },
+  { icon: <Gamepad2 className="w-5 h-5" />, label: 'Gaming', category: 'Gaming' },
+  { icon: <Newspaper className="w-5 h-5" />, label: 'News', category: 'News' },
+  { icon: <Trophy className="w-5 h-5" />, label: 'Sports', category: 'Sports' },
+  { icon: <Lightbulb className="w-5 h-5" />, label: 'Learning', category: 'Learning' },
+  { icon: <Shirt className="w-5 h-5" />, label: 'Fashion & Beauty', category: 'Fashion' },
 ];
 
 const moreItems: SidebarItem[] = [
-  { icon: <Youtube className="w-5 h-5" />, label: 'YouTube Premium' },
-  { icon: <Settings className="w-5 h-5" />, label: 'Settings' },
-  { icon: <Flag className="w-5 h-5" />, label: 'Report history' },
-  { icon: <HelpCircle className="w-5 h-5" />, label: 'Help' },
-  { icon: <MessageSquare className="w-5 h-5" />, label: 'Send feedback' },
+  { icon: <Youtube className="w-5 h-5" />, label: 'YouTube Premium', action: () => toast.info('Premium coming soon') },
+  { icon: <Settings className="w-5 h-5" />, label: 'Settings', action: () => toast.info('Settings coming soon') },
+  { icon: <Flag className="w-5 h-5" />, label: 'Report history', action: () => toast.info('Report history coming soon') },
+  { icon: <HelpCircle className="w-5 h-5" />, label: 'Help', action: () => toast.info('Help coming soon') },
+  { icon: <MessageSquare className="w-5 h-5" />, label: 'Send feedback', action: () => toast.info('Feedback coming soon') },
 ];
 
 export default function YouTubeSidebar() {
-  const { sidebarOpen, currentView, setCurrentView, goHome, sidebarMini } = useYouTubeStore();
+  const { sidebarOpen, currentView, setCurrentView, goHome, sidebarMini, setSelectedCategory } = useYouTubeStore();
 
-  const handleItemClick = (view?: string) => {
-    if (!view) return;
-    if (view === 'home') {
-      goHome();
-    } else {
-      setCurrentView(view as Parameters<typeof setCurrentView>[0]);
+  const handleItemClick = (item: SidebarItem) => {
+    if (item.action) {
+      item.action();
+      return;
+    }
+    if (item.category) {
+      // For explore items with categories, go home and set the category filter
+      setSelectedCategory(item.category);
+      setCurrentView('home');
+      return;
+    }
+    if (item.view) {
+      if (item.view === 'home') {
+        goHome();
+      } else {
+        setCurrentView(item.view as Parameters<typeof setCurrentView>[0]);
+      }
     }
   };
 
@@ -89,7 +102,7 @@ export default function YouTubeSidebar() {
         {mainItems.map((item) => (
           <button
             key={item.label}
-            onClick={() => handleItemClick(item.view)}
+            onClick={() => handleItemClick(item)}
             className={`flex flex-col items-center justify-center w-full py-4 px-1 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
               currentView === item.view ? 'font-medium' : ''
             }`}
@@ -125,7 +138,7 @@ export default function YouTubeSidebar() {
           {mainItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => handleItemClick(item.view)}
+              onClick={() => handleItemClick(item)}
               className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
                 currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
               }`}
@@ -147,7 +160,7 @@ export default function YouTubeSidebar() {
           {youItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => handleItemClick(item.view)}
+              onClick={() => handleItemClick(item)}
               className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
                 currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
               }`}
@@ -166,7 +179,7 @@ export default function YouTubeSidebar() {
           {exploreItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => handleItemClick(item.view)}
+              onClick={() => handleItemClick(item)}
               className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
             >
               <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
@@ -181,6 +194,7 @@ export default function YouTubeSidebar() {
           {moreItems.map((item) => (
             <button
               key={item.label}
+              onClick={() => handleItemClick(item)}
               className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
             >
               <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>

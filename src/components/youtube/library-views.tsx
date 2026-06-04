@@ -1,14 +1,40 @@
 'use client';
 
 import { useYouTubeStore } from '@/store/youtube-store';
-import { homeVideos } from '@/lib/youtube-data';
+import { homeVideos, shortsVideos } from '@/lib/youtube-data';
 import VideoCard from './video-card';
 import { Clock, ThumbsUp, ListVideo } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const allVideos = [...homeVideos, ...shortsVideos];
 
 export function HistoryView() {
-  const { watchHistory } = useYouTubeStore();
+  const { watchHistory, user, toggleAuthDialog } = useYouTubeStore();
+
+  if (!user) {
+    return (
+      <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <Clock className="w-7 h-7 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Watch history</h1>
+        </div>
+        <div className="flex flex-col items-center py-20">
+          <Clock className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Sign in to see your watch history</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 mb-4">Your watch history will show up here</p>
+          <Button
+            onClick={toggleAuthDialog}
+            className="rounded-full bg-red-600 hover:bg-red-700 text-white font-medium px-6"
+          >
+            Sign in
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const historyVideos = watchHistory
-    .map(id => homeVideos.find(v => v.id === id))
+    .map(id => allVideos.find(v => v.id === id))
     .filter(Boolean);
 
   return (
@@ -36,9 +62,32 @@ export function HistoryView() {
 }
 
 export function LikedView() {
-  const { likedVideos } = useYouTubeStore();
+  const { likedVideos, user, toggleAuthDialog } = useYouTubeStore();
+
+  if (!user) {
+    return (
+      <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <ThumbsUp className="w-7 h-7 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Liked videos</h1>
+        </div>
+        <div className="flex flex-col items-center py-20">
+          <ThumbsUp className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Sign in to see your liked videos</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 mb-4">Use the 👍 button to like videos</p>
+          <Button
+            onClick={toggleAuthDialog}
+            className="rounded-full bg-red-600 hover:bg-red-700 text-white font-medium px-6"
+          >
+            Sign in
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const liked = likedVideos
-    .map(id => homeVideos.find(v => v.id === id))
+    .map(id => allVideos.find(v => v.id === id))
     .filter(Boolean);
 
   return (
@@ -66,9 +115,32 @@ export function LikedView() {
 }
 
 export function WatchLaterView() {
-  const { watchLater } = useYouTubeStore();
+  const { watchLater, user, toggleAuthDialog } = useYouTubeStore();
+
+  if (!user) {
+    return (
+      <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <ListVideo className="w-7 h-7 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Watch later</h1>
+        </div>
+        <div className="flex flex-col items-center py-20">
+          <ListVideo className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 text-lg font-medium">Sign in to use Watch later</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 mb-4">Save videos to watch later</p>
+          <Button
+            onClick={toggleAuthDialog}
+            className="rounded-full bg-red-600 hover:bg-red-700 text-white font-medium px-6"
+          >
+            Sign in
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const videos = watchLater
-    .map(id => homeVideos.find(v => v.id === id))
+    .map(id => allVideos.find(v => v.id === id))
     .filter(Boolean);
 
   return (

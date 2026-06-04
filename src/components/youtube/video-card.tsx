@@ -2,7 +2,7 @@
 
 import { Video } from '@/lib/youtube-data';
 import { useYouTubeStore } from '@/store/youtube-store';
-import { MoreVertical, Play } from 'lucide-react';
+import { MoreVertical, Play, Clock, ListPlus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface VideoCardProps {
   video: Video;
@@ -41,6 +42,21 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   const handleChannelClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     openChannel(video.channelTitle);
+  };
+
+  const handleAddToQueue = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast.success(`"${video.title}" added to queue`);
+  };
+
+  const handleWatchLater = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWatchLater(video.id);
+    if (!isWatchLater) {
+      toast.success('Added to Watch later');
+    } else {
+      toast.info('Removed from Watch later');
+    }
   };
 
   if (layout === 'shorts') {
@@ -126,8 +142,13 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleWatchLater(video.id); }}>
-              {isWatchLater ? '✓ Remove from Watch later' : '🕐 Add to Watch later'}
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAddToQueue(e); }}>
+              <ListPlus className="w-4 h-4 mr-2" />
+              Add to queue
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleWatchLater(e); }}>
+              <Clock className="w-4 h-4 mr-2" />
+              {isWatchLater ? '✓ Remove from Watch later' : 'Add to Watch later'}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleLike(video.id); }}>
               {isLiked ? '✓ Unlike' : '👍 Like'}
@@ -165,8 +186,25 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             ● LIVE
           </span>
         )}
-        {/* Hover overlay */}
+        {/* Hover overlay with action buttons */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+        {/* Quick action overlay buttons */}
+        <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={handleWatchLater}
+            className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-colors"
+            aria-label={isWatchLater ? 'Remove from Watch later' : 'Watch later'}
+          >
+            <Clock className={`w-4 h-4 ${isWatchLater ? 'text-blue-400' : 'text-white'}`} />
+          </button>
+          <button
+            onClick={handleAddToQueue}
+            className="p-1.5 bg-black/70 hover:bg-black/90 rounded-md transition-colors"
+            aria-label="Add to queue"
+          >
+            <ListPlus className="w-4 h-4 text-white" />
+          </button>
+        </div>
       </div>
 
       {/* Info */}
@@ -208,8 +246,13 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleWatchLater(video.id); }}>
-              {isWatchLater ? '✓ Remove from Watch later' : '🕐 Add to Watch later'}
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAddToQueue(e); }}>
+              <ListPlus className="w-4 h-4 mr-2" />
+              Add to queue
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleWatchLater(e); }}>
+              <Clock className="w-4 h-4 mr-2" />
+              {isWatchLater ? '✓ Remove from Watch later' : 'Add to Watch later'}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleLike(video.id); }}>
               {isLiked ? '✓ Unlike' : '👍 Like'}

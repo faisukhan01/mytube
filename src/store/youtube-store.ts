@@ -3,6 +3,15 @@ import { Video, Comment } from '@/lib/youtube-data';
 
 export type ViewMode = 'home' | 'player' | 'search' | 'shorts' | 'trending' | 'history' | 'liked' | 'watchlater' | 'subscriptions' | 'channel';
 
+export interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  initials: string;
+  color: string;
+}
+
 interface YouTubeState {
   currentView: ViewMode;
   currentVideo: Video | null;
@@ -18,6 +27,8 @@ interface YouTubeState {
   isSearching: boolean;
   miniPlayerVideo: Video | null;
   selectedChannel: string;
+  user: UserData | null;
+  showAuthDialog: boolean;
 
   // Actions
   setCurrentView: (view: ViewMode) => void;
@@ -38,6 +49,14 @@ interface YouTubeState {
   search: (query: string) => void;
   goHome: () => void;
   openChannel: (channelName: string) => void;
+
+  // Auth actions
+  setUser: (user: UserData | null) => void;
+  clearUser: () => void;
+  toggleAuthDialog: () => void;
+  setShowAuthDialog: (show: boolean) => void;
+  fetchUserData: () => Promise<void>;
+  checkSession: () => Promise<void>;
 }
 
 export const useYouTubeStore = create<YouTubeState>((set, get) => ({
@@ -55,6 +74,8 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   isSearching: false,
   miniPlayerVideo: null,
   selectedChannel: '',
+  user: null,
+  showAuthDialog: false,
 
   setCurrentView: (view) => set({ currentView: view }),
   setCurrentVideo: (video) => set({ currentVideo: video }),
@@ -65,19 +86,107 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   setSelectedCategory: (category) => set({ selectedCategory: category }),
   setComments: (comments) => set({ comments }),
   setIsSearching: (searching) => set({ isSearching: searching }),
-  toggleLike: (videoId) => set((state) => ({
-    likedVideos: state.likedVideos.includes(videoId)
-      ? state.likedVideos.filter(id => id !== videoId)
-      : [...state.likedVideos, videoId],
-  })),
-  toggleWatchLater: (videoId) => set((state) => ({
-    watchLater: state.watchLater.includes(videoId)
-      ? state.watchLater.filter(id => id !== videoId)
-      : [...state.watchLater, videoId],
-  })),
-  addToHistory: (videoId) => set((state) => ({
-    watchHistory: [videoId, ...state.watchHistory.filter(id => id !== videoId)],
-  })),
+
+  toggleLike: (videoId) => {
+    const state = get();
+    const isLiked = state.likedVideos.includes(videoId);
+
+    // Update local state immediately
+    set((s) => ({
+      likedVideos: s.likedVideos.includes(videoId)
+        ? s.likedVideos.filter(id => id !== videoId)
+        : [...s.likedVideos, videoId],
+    }));
+
+    // Persist to server if logged in
+    if (state.user) {
+      if (isLiked) {
+        fetch('/api/user/videos', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId, type: 'liked' }),
+        }).catch(() => {
+          // Revert on error
+          set((s) => ({
+            likedVideos: s.likedVideos.includes(videoId)
+              ? s.likedVideos
+              : [...s.likedVideos, videoId],
+          }));
+        });
+      } else {
+        fetch('/api/user/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId, type: 'liked' }),
+        }).catch(() => {
+          // Revert on error
+          set((s) => ({
+            likedVideos: s.likedVideos.filter(id => id !== videoId),
+          }));
+        });
+      }
+    }
+  },
+
+  toggleWatchLater: (videoId) => {
+    const state = get();
+    const isInList = state.watchLater.includes(videoId);
+
+    // Update local state immediately
+    set((s) => ({
+      watchLater: s.watchLater.includes(videoId)
+        ? s.watchLater.filter(id => id !== videoId)
+        : [...s.watchLater, videoId],
+    }));
+
+    // Persist to server if logged in
+    if (state.user) {
+      if (isInList) {
+        fetch('/api/user/videos', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId, type: 'watchlater' }),
+        }).catch(() => {
+          set((s) => ({
+            watchLater: s.watchLater.includes(videoId)
+              ? s.watchLater
+              : [...s.watchLater, videoId],
+          }));
+        });
+      } else {
+        fetch('/api/user/videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoId, type: 'watchlater' }),
+        }).catch(() => {
+          set((s) => ({
+            watchLater: s.watchLater.filter(id => id !== videoId),
+          }));
+        });
+      }
+    }
+  },
+
+  addToHistory: (videoId) => {
+    const state = get();
+
+    // Update local state immediately
+    set((s) => ({
+      watchHistory: [videoId, ...s.watchHistory.filter(id => id !== videoId)],
+    }));
+
+    // Persist to server if logged in
+    if (state.user) {
+      fetch('/api/user/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, type: 'history' }),
+      }).catch(() => {
+        // Silent fail for history
+      });
+    }
+  },
+
   setMiniPlayerVideo: (video) => set({ miniPlayerVideo: video }),
   setSelectedChannel: (channel) => set({ selectedChannel: channel }),
 
@@ -104,4 +213,53 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     currentView: 'channel',
     selectedChannel: channelName,
   }),
+
+  // Auth actions
+  setUser: (user) => set({ user }),
+
+  clearUser: async () => {
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+    } catch {
+      // Silent fail
+    }
+    set({
+      user: null,
+      likedVideos: [],
+      watchLater: [],
+      watchHistory: [],
+    });
+  },
+
+  toggleAuthDialog: () => set((state) => ({ showAuthDialog: !state.showAuthDialog })),
+  setShowAuthDialog: (show) => set({ showAuthDialog: show }),
+
+  fetchUserData: async () => {
+    try {
+      const res = await fetch('/api/user/videos');
+      if (res.ok) {
+        const data = await res.json();
+        set({
+          likedVideos: data.liked || [],
+          watchLater: data.watchlater || [],
+          watchHistory: data.history || [],
+        });
+      }
+    } catch {
+      // Silent fail
+    }
+  },
+
+  checkSession: async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const user = await res.json();
+        set({ user });
+        await get().fetchUserData();
+      }
+    } catch {
+      // Not authenticated, that's fine
+    }
+  },
 }));

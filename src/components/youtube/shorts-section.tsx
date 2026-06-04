@@ -16,7 +16,7 @@ export default function ShortsSection() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Shorts</h2>
       </div>
 
-      {/* Shorts grid */}
+      {/* Shorts grid - each short is clickable via VideoCard */}
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
         {shortsVideos.map((video) => (
           <VideoCard key={video.id} video={video} layout="shorts" />

@@ -12,7 +12,19 @@ import {
   X,
   Sun,
   Moon,
+  User,
+  Settings,
+  LogOut,
+  MonitorPlay,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import AuthDialog from './auth-dialog';
 
 function getInitialDarkMode(): boolean {
   if (typeof window === 'undefined') return false;
@@ -50,6 +62,11 @@ export default function YouTubeHeader() {
     toggleSidebar,
     search,
     goHome,
+    user,
+    toggleAuthDialog,
+    showAuthDialog,
+    setShowAuthDialog,
+    clearUser,
   } = useYouTubeStore();
 
   const { isDark, toggleTheme } = useTheme();
@@ -74,6 +91,10 @@ export default function YouTubeHeader() {
 
   const handleLogoClick = () => {
     goHome();
+  };
+
+  const handleSignOut = async () => {
+    await clearUser();
   };
 
   return (
@@ -192,13 +213,72 @@ export default function YouTubeHeader() {
             <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center">3</span>
           </button>
-          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors ml-1" aria-label="User profile">
-            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">U</span>
-            </div>
-          </button>
+
+          {/* User profile button */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors ml-1" aria-label="User menu">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm"
+                    style={{ backgroundColor: user.color }}
+                  >
+                    {user.initials}
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700">
+                <div className="px-3 py-3 flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
+                    style={{ backgroundColor: user.color }}
+                  >
+                    {user.initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.email.split('@')[0]}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem className="cursor-pointer text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-[#3f3f3f]">
+                  <User className="w-4 h-4 mr-3" />
+                  Your channel
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-[#3f3f3f]">
+                  <MonitorPlay className="w-4 h-4 mr-3" />
+                  YouTube Studio
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-[#3f3f3f]">
+                  <Settings className="w-4 h-4 mr-3" />
+                  Switch account
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem
+                  className="cursor-pointer text-gray-800 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-[#3f3f3f]"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <button
+              onClick={toggleAuthDialog}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors ml-1"
+              aria-label="Sign in"
+            >
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">U</span>
+              </div>
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Auth Dialog */}
+      <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} />
 
       {/* Mobile Search Overlay */}
       {showSearch && (
