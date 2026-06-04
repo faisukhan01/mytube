@@ -83,7 +83,7 @@ export default function TrendingView() {
                 {tab.label}
                 {/* Underline indicator */}
                 {isActive && (
-                  <span className="absolute bottom-0 left-2 right-2 h-[3px] bg-gray-900 dark:bg-white rounded-full" />
+                  <span className="absolute bottom-0 left-2 right-2 h-[3px] bg-gray-900 dark:bg-white rounded-full animate-underline-slide" />
                 )}
               </button>
             );
@@ -98,11 +98,11 @@ export default function TrendingView() {
           return (
             <div
               key={video.id}
-              className="flex gap-4 items-start group rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150 px-2 py-2 cursor-pointer"
+              className="flex gap-4 items-start group rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150 px-2 py-2 cursor-pointer border-l-2 border-transparent hover:border-[#ff0000]"
               onClick={() => openVideo(video)}
             >
               {/* Large ranking number */}
-              <span className="text-lg font-bold text-gray-400 dark:text-gray-500 w-8 shrink-0 pt-3 text-right select-none">
+              <span className="text-lg font-bold text-[#ff0000] w-8 shrink-0 pt-3 text-right select-none">
                 {index + 1}
               </span>
 

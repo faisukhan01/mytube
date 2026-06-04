@@ -201,6 +201,75 @@
   50% { transform: translateY(6px); opacity: 1; }
 }
 
+/* New keyframes for Task 5 */
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+@keyframes slideInRightPanel {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes progressBar {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes likePop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.35); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes checkmark {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
+  50% { box-shadow: 0 0 8px 2px rgba(255, 0, 0, 0.2); }
+}
+
+@keyframes dotGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+  50% { box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.3); }
+}
+
+@keyframes playingBar {
+  0%, 100% { height: 4px; }
+  50% { height: 12px; }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes counterUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes underlineSlide {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 
 
 /* ===== Animation Utility Classes ===== */
@@ -252,6 +321,60 @@
 
 .animate-swipe-hint {
   animation: swipeHint 1.5s ease-in-out infinite;
+}
+
+/* New animation utility classes for Task 5 */
+.animate-pulse-badge {
+  animation: pulseBadge 0.4s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRightPanel 0.3s ease-out both;
+}
+
+.animate-fade-scale {
+  animation: fadeScale 0.25s ease-out both;
+}
+
+.animate-progress-bar {
+  animation: progressBar 2s ease-out forwards;
+}
+
+.animate-like-pop {
+  animation: likePop 0.4s ease-out;
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out;
+}
+
+.animate-checkmark {
+  animation: checkmark 0.4s ease-out both;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-dot-glow {
+  animation: dotGlow 2s ease-in-out infinite;
+}
+
+.animate-playing-bar {
+  animation: playingBar 0.8s ease-in-out infinite;
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.3s ease-out both;
+}
+
+.animate-counter-up {
+  animation: counterUp 0.5s ease-out both;
+}
+
+.animate-underline-slide {
+  animation: underlineSlide 0.3s ease-out both;
+  transform-origin: left;
 }
 
 /* ===== Page Transition Classes ===== */
@@ -448,4 +571,149 @@ body.sidebar-open {
 }
 .dark ::-webkit-scrollbar-thumb:hover {
   background-color: #5a5a5a;
+}
+
+/* ===== Custom Selection Color (YouTube red tint) ===== */
+::selection {
+  background-color: rgba(255, 0, 0, 0.15);
+  color: inherit;
+}
+.dark ::selection {
+  background-color: rgba(255, 0, 0, 0.25);
+}
+
+/* ===== Image Loading Shimmer ===== */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+img.loaded {
+  opacity: 1;
+}
+
+/* ===== Custom Tooltip Styles ===== */
+.tooltip {
+  position: relative;
+}
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: rgba(28, 28, 28, 0.95);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 100;
+}
+.dark .tooltip::after {
+  background: rgba(200, 200, 200, 0.95);
+  color: #0f0f0f;
+}
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* Mini sidebar tooltip (bottom-aligned) */
+.mini-tooltip::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+  left: 50%;
+}
+
+/* ===== Ripple Effect ===== */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-container .ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  animation: ripple 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* ===== Sidebar Active Indicator ===== */
+.sidebar-active-indicator {
+  position: relative;
+}
+.sidebar-active-indicator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: #ff0000;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ===== Watched Progress Bar (thin, red, glowing) ===== */
+.watched-progress-thin {
+  height: 1.5px;
+  background: #ff0000;
+  border-radius: 0 1px 1px 0;
+  box-shadow: 0 0 4px rgba(255, 0, 0, 0.4);
+  transition: width 0.3s ease;
+}
+
+/* ===== Playing Now Indicator ===== */
+.playing-indicator {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 12px;
+}
+.playing-indicator span {
+  width: 2px;
+  background: #ff0000;
+  border-radius: 1px;
+  animation: playingBar 0.8s ease-in-out infinite;
+}
+.playing-indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.playing-indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ===== Tab Underline Slide ===== */
+.tab-underline {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: #0f0f0f;
+  border-radius: 1px;
+  transition: left 0.3s ease, width 0.3s ease;
+}
+.dark .tab-underline {
+  background: white;
+}
+
+/* ===== Header Scroll Shadow ===== */
+.header-scrolled {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+}
+.dark .header-scrolled {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Sign In Button Glow ===== */
+.sign-in-glow:hover {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+/* ===== Duration Badge Backdrop Blur ===== */
+.duration-badge-blur {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }

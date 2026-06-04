@@ -52,7 +52,7 @@ export default function CategoryChips() {
           <div className="absolute left-0 z-10 flex items-center h-full bg-gradient-to-r from-white dark:from-[#0f0f0f] via-white/95 dark:via-[#0f0f0f]/95 to-transparent pr-8">
             <button
               onClick={() => scroll('left')}
-              className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all duration-200 active:scale-95"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all duration-200 active:scale-95 hover:scale-110"
             >
               <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
@@ -73,10 +73,10 @@ export default function CategoryChips() {
               <button
                 key={category}
                 onClick={() => handleChipClick(category)}
-                className={`shrink-0 px-3 rounded-full text-sm font-medium transition-all duration-200 h-8 flex items-center justify-center ${
+                className={`shrink-0 px-3 rounded-full text-sm font-medium transition-all duration-200 h-8 flex items-center justify-center border ${
                   isActive
-                    ? 'bg-[#0f0f0f] text-white dark:bg-white dark:text-black hover:bg-[#272727] dark:hover:bg-gray-200'
-                    : 'bg-[#f2f2f2] text-[#0f0f0f] dark:bg-[#272727] dark:text-[#f1f1f1] hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]'
+                    ? 'bg-[#0f0f0f] text-white dark:bg-white dark:text-black hover:bg-[#272727] dark:hover:bg-gray-200 shadow-sm border-[#0f0f0f] dark:border-white'
+                    : 'bg-[#f2f2f2] text-[#0f0f0f] dark:bg-[#272727] dark:text-[#f1f1f1] hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f] border-[#f2f2f2] dark:border-[#272727]'
                 } ${isAnimating ? 'animate-bounce-in' : ''}`}
               >
                 {category}
@@ -90,7 +90,7 @@ export default function CategoryChips() {
           <div className="absolute right-0 z-10 flex items-center h-full bg-gradient-to-l from-white dark:from-[#0f0f0f] via-white/95 dark:via-[#0f0f0f]/95 to-transparent pl-8">
             <button
               onClick={() => scroll('right')}
-              className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all duration-200 active:scale-95"
+              className="p-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all duration-200 active:scale-95 hover:scale-110"
             >
               <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>

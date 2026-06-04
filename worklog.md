@@ -1190,3 +1190,301 @@ Stage Summary:
 - About tab has consistent stats (total views, join date, location)
 - Zero lint errors, dev server compiles successfully
 
+
+---
+Task ID: 4
+Agent: Queue Panel + Autoplay Agent
+Task: Add video queue panel and autoplay next video feature
+
+Work Log:
+- Updated video-player-view.tsx imports: Added GripVertical, X, Trash2, Play from lucide-react, Switch from @/components/ui/switch, useEffect and useRef from react
+- Added store destructuring: videoQueue, removeFromQueue, clearQueue, showQueue, toggleQueue, playNext, openVideo from useYouTubeStore
+- Added state variables: autoplay (boolean, default true), isQueueExpanded (boolean, default true), autoplayCancelledRef, countdownTimeoutRef, playerCheckRef (refs for timer management)
+- Added YouTube IFrame API loading via useEffect (loads iframe_api script on mount)
+- Added handleVideoEnded callback: when autoplay is ON and video ends, shows 5-second countdown toast with cancel button, then plays next video from queue (or first related video if queue empty)
+- Added YouTube IFrame API player tracking via useEffect: polls for iframe + YT.Player availability every 500ms, creates YT.Player instance with onStateChange handler that detects video end (state === 0)
+- Updated iframe element: added id="yt-player" and enablejsapi=1 parameter to src URL for YouTube IFrame API integration
+- Added "Up next / Autoplay" toggle header in the related videos sidebar using Switch component, matching YouTube's autoplay UI design
+- Added queue panel in the right sidebar between autoplay toggle and related chips, with:
+  - Collapsible header showing "Queue" label with video count and expand/collapse toggle
+  - Queue items with GripVertical drag handle, 100px thumbnail, title (line-clamp-2), channel name, and remove (X) button on hover
+  - "Clear queue" button at bottom with Trash2 icon
+  - Empty state when queue is empty and showQueue is toggled on, with "Your queue is empty" message and "Hide queue" link
+- Verified video-card.tsx: "Add to queue" button already works correctly with addToQueue from store, shows toast on add, present in both dropdown menu and overlay button on grid cards
+- All lint checks pass with zero errors
+- No dev server errors
+
+Stage Summary:
+- Video queue panel fully implemented in video player view right sidebar
+- Queue panel shows all queued videos with thumbnails, titles, channel names, and remove buttons
+- Queue panel is collapsible/expandable with toggle
+- Clear queue button removes all videos from queue
+- Empty queue state with descriptive message
+- Autoplay toggle (ON/OFF) added matching YouTube's "Up next / Autoplay" design
+- YouTube IFrame API integration detects when video ends
+- 5-second countdown toast notification before autoplaying next video with Cancel button
+- When autoplay is ON: plays next from queue first, falls back to first related video
+- "Add to queue" button in video-card.tsx confirmed working correctly
+- Zero lint errors, app compiles and runs successfully
+
+---
+Task ID: 3
+Agent: Bug Fix + URL Routing Agent
+Task: Fix channel navigation bug and add hash-based URL routing
+
+Work Log:
+- Fixed openChannel in youtube-store.ts: Changed from direct set() to checking if current view is 'player' with a current video, and if so, setting miniPlayerVideo properly before navigating to channel view (matching the pattern used by setCurrentView)
+- Fixed description show more/less transition in video-player-view.tsx: Changed expanded state from no max-height (which breaks CSS transition) to max-h-[2000px] so the transition from max-h-[60px] animates smoothly. Also added ease-in-out timing function.
+- Added hash-based URL routing helper functions to youtube-store.ts:
+  - updateHash(): Updates window.location.hash using pushState (avoids triggering popstate)
+  - parseHash(): Parses current URL hash into view info (view, videoId, query, channel, playlistId, etc.)
+  - Exported parseHash for use in page.tsx
+- Updated all navigation actions to update URL hash:
+  - goHome → updateHash('#/')
+  - openVideo → updateHash(`#/watch?v=${video.id}`)
+  - openShort → updateHash(`#/shorts/${shortVideo.id}`) using shortsVideos import
+  - search → updateHash(`#/results?search_query=${encodeURIComponent(query)}`)
+  - openChannel → updateHash(`#/channel/${encodeURIComponent(channelName)}`)
+  - openPlaylist → updateHash(`#/playlist?list=${playlistId}`)
+  - setCurrentView → updateHash for trending, history, liked, watchlater, subscriptions
+- Added popstate event listener in page.tsx for browser back/forward navigation
+- Added initial hash parsing on mount in page.tsx (only applies if hash is present and not just #/)
+- Added applyHashView callback that handles all hash-to-view conversions including video lookup via getVideoById and shorts index lookup
+- Added page title updates based on current view:
+  - Video player: "VIDEO_TITLE - YouTube"
+  - Search: "QUERY - YouTube"
+  - Other views: "YouTube"
+- Imported shortsVideos from youtube-data in both youtube-store.ts and page.tsx
+- All lint checks pass with zero errors
+- Dev server running without errors
+
+Stage Summary:
+- Channel navigation from video player now properly sets up mini player
+- Description expand/collapse now animates smoothly with CSS transition
+- Full hash-based URL routing implemented with all views supported
+- Browser back/forward navigation works via popstate listener
+- Page title updates dynamically based on current view
+- URL formats: #/, #/watch?v=ID, #/shorts/ID, #/results?search_query=Q, #/trending, #/channel/NAME, #/history, #/liked, #/watchlater, #/subscriptions, #/playlist?list=ID
+- Zero lint errors, no compile errors
+
+---
+Task ID: 5
+Agent: Styling Polish Agent
+Task: Dramatically improve visual polish, micro-interactions, and styling details across the YouTube clone
+
+Work Log:
+- Updated globals.css with 12 new @keyframes animations: pulseBadge, slideInRightPanel, fadeScale, progressBar, likePop, ripple, checkmark, glowPulse, dotGlow, playingBar, fadeSlideUp, counterUp, underlineSlide
+- Added 13 new animation utility classes: animate-pulse-badge, animate-slide-in-right, animate-fade-scale, animate-progress-bar, animate-like-pop, animate-ripple, animate-checkmark, animate-glow-pulse, animate-dot-glow, animate-playing-bar, animate-fade-slide-up, animate-counter-up, animate-underline-slide
+- Added custom selection color (YouTube red tint) for both light and dark modes
+- Added image loading shimmer effect (opacity 0→1 transition for lazy-loaded images)
+- Added custom tooltip styles (CSS-only with ::after pseudo-element, scale transition, dark mode support)
+- Added mini-tooltip variant for bottom-aligned tooltips (mini sidebar)
+- Added ripple effect CSS class (ripple-container + ripple-effect)
+- Added sidebar active indicator (2px red left border via ::before pseudo-element)
+- Added watched progress bar thin variant (1.5px, #ff0000, with glow shadow)
+- Added playing indicator (3-bar animated equalizer in red)
+- Added tab underline slide component (translate transition)
+- Added header scroll shadow class (shadow on scroll with dark mode support)
+- Added sign-in button glow effect (hover: box-shadow blue glow)
+- Added duration badge backdrop blur class
+- Updated header.tsx: Added scroll shadow (isScrolled state + header-scrolled class)
+- Updated header.tsx: Search bar expands from max-w-[640px] to max-w-[660px] on focus
+- Updated header.tsx: Theme toggle rotates 180deg smoothly on click (transition-transform duration-500)
+- Updated header.tsx: Notification badge bounces with animate-pulse-badge when count changes
+- Updated header.tsx: User avatar scales to 1.05 on hover (hover:scale-105 transition-all duration-200)
+- Updated header.tsx: Sign-in button glows blue on hover (hover:shadow-[0_0_12px_rgba(59,130,246,0.3)])
+- Updated video-card.tsx: Added playing now indicator (animated 3-bar equalizer when currentVideo matches)
+- Updated video-card.tsx: Duration badge gets backdrop-blur-sm (duration-badge-blur class)
+- Updated video-card.tsx: Channel avatar ring animation on hover (hover:ring-2 hover:ring-gray-300)
+- Updated video-card.tsx: Watched progress bar is now 1.5px thin with #ff0000 and glow (watched-progress-thin)
+- Updated sidebar.tsx: Active items get red left border (sidebar-active-indicator class)
+- Updated sidebar.tsx: All hover transitions are 150ms (transition-colors duration-150)
+- Updated sidebar.tsx: Mini sidebar items get CSS-only tooltips (tooltip mini-tooltip data-tooltip)
+- Updated sidebar.tsx: Section headings use uppercase + tracking-wide (uppercase tracking-wide)
+- Updated sidebar.tsx: All separators have transition-all duration-300 for expand/collapse animation
+- Updated category-chips.tsx: Active chip gets shadow-sm and colored border
+- Updated category-chips.tsx: Inactive chips get subtle border (border-[#f2f2f2]/border-[#272727])
+- Updated category-chips.tsx: Scroll arrows scale to 1.1 on hover (hover:scale-110)
+- Updated video-player-view.tsx: Like button has pop animation (animate-like-pop on ThumbsUp icon)
+- Updated video-player-view.tsx: Subscribe button has ripple-container class
+- Updated video-player-view.tsx: Description box gets shadow-md + border when expanded
+- Updated video-player-view.tsx: Comments section has animate-fade-in
+- Updated video-player-view.tsx: Related videos have hover lift effect (hover:-translate-y-0.5)
+- Updated video-player-view.tsx: Share dialog copy button shows checkmark animation (copySuccess state)
+- Updated shorts-player.tsx: Gradient overlay enhanced (from-black/95 via-black/70 to-black/30)
+- Updated shorts-player.tsx: All action buttons have active:scale-90 press animation
+- Updated shorts-player.tsx: Progress dots get animate-dot-glow on active dot
+- Updated shorts-player.tsx: Added paused overlay with play icon when video errors
+- Updated search-results.tsx: Filter chips bar has transition-opacity duration-200
+- Updated search-results.tsx: Channel results have hover:shadow-sm and transition-all duration-150
+- Updated search-results.tsx: Added "Did you mean" spelling correction suggestion
+- Updated search-results.tsx: Channel verification badge on channel results (checkmark SVG)
+- Updated trending-view.tsx: Ranking numbers use #ff0000 color (text-[#ff0000])
+- Updated trending-view.tsx: Items have left border accent on hover (hover:border-[#ff0000])
+- Updated trending-view.tsx: Tab underline has animate-underline-slide animation
+- Updated channel-view.tsx: Banner has parallax-ready CSS (translateZ(0) + transition)
+- Updated channel-view.tsx: Subscribe button has ripple-container class
+- Updated channel-view.tsx: About tab stats have animate-counter-up with staggered delays
+- All lint checks pass with zero errors
+
+Stage Summary:
+- 12 new keyframe animations added to globals.css for micro-interactions
+- Header: scroll shadow, search bar expand, theme toggle rotation, badge bounce, avatar pulse, sign-in glow
+- Video cards: playing now indicator, backdrop blur duration badges, channel ring animation, thin watched progress bar with glow
+- Sidebar: red active border indicator, 150ms hover transitions, CSS-only mini tooltips, uppercase section headings, separator animations
+- Category chips: active shadow + border, scroll arrow scale hover, border definition
+- Video player: like pop animation, subscribe ripple, description shadow on expand, comments fade-in, related video hover lift, copy checkmark
+- Shorts: enhanced gradient overlay, action button press animations, dot glow, paused overlay
+- Search: filter chips transition, channel hover shadow, "Did you mean" correction, verification badges
+- Trending: red ranking numbers, left border accent, underline slide animation
+- Channel: banner parallax CSS, subscribe ripple, stats counter animation with stagger
+- Zero lint errors, all features working
+
+---
+Task ID: 6
+Agent: New Features Agent
+Task: Add channel hover cards, better Shorts progress, responsive improvements, context menu, not interested, keyboard shortcuts
+
+Work Log:
+- Updated youtube-store.ts: Added hiddenVideos state (string[]) and hideVideo/unhideVideo actions for "Not interested" feature
+- Created /src/components/youtube/channel-hover-card.tsx: Channel hover card component using shadcn/ui HoverCard
+  - Shows after 500ms hover delay with channel avatar (64px), channel name with verification badge, @handle, subscriber count, video count, description snippet (2 lines max), and subscribe button
+  - Subscribe button toggles between YouTube red "Subscribe" and gray "Subscribed" states
+- Updated video-card.tsx: Wrapped channel avatar and channel name with ChannelHoverCard in grid layout
+  - Added ContextMenu wrapper around grid video cards with right-click menu: Add to queue, Save to Watch later, Save to playlist, Share, Not interested, Don't recommend channel, Report
+  - Expanded DropdownMenu (three-dot menu) with same options including Share, Not interested, Don't recommend channel, and Report
+  - Added hidden videos check - cards with IDs in hiddenVideos array render as null (hidden from grid)
+  - Added handler functions for Not interested (shows "Video removed" toast with Undo), Don't recommend channel, Share (copies link), Save to playlist, and Report
+- Updated shorts-player.tsx: Enhanced Shorts player with real progress tracking and interactions
+  - Added YouTube IFrame API getCurrentTime/getDuration/pauseVideo/playVideo methods to YTPlayer interface
+  - Added progress interval (200ms polling) to track current time and duration via YouTube IFrame API
+  - Added real progress bar at top of video with current time / total time display (formatTime helper)
+  - Added tap-to-pause: single tap on video toggles pause/play via YouTube API
+  - Added double-tap-to-like: quick double tap shows heart animation in center and likes the video
+  - Added paused state indicator with play icon overlay
+  - Removed old static progress bar and paused overlay, replaced with dynamic tracking
+- Updated video-grid.tsx: Added comment noting responsive grid columns (1 mobile, 2 tablet, 3 desktop, 4 wide)
+- Updated video-player-view.tsx: Mobile responsive improvements
+  - Made action buttons scrollable horizontally on mobile (overflow-x-auto with scrollbarWidth: none)
+  - Made description box scrollable when expanded (max-h-[400px] mobile, max-h-[600px] desktop)
+  - Added "Comments" button visible on mobile that scrolls to comments section
+  - Added MessageCircle icon import
+- Updated sidebar.tsx: Improved mobile overlay transition (animate-fade-in class, duration-300 ease-in-out for sidebar slide)
+- Updated header.tsx: Added animate-fade-in class to mobile search overlay for smooth appearance
+- Updated keyboard-shortcuts-dialog.tsx: Updated shortcut descriptions to match specification
+  - Changed "Play/Pause" to "Toggle play/pause"
+  - Changed "Rewind 5 seconds"/"Forward 5 seconds" to "Previous video"/"Next video"
+  - Changed "Mute/Unmute" to "Toggle mute"
+  - Changed "Fullscreen" to "Toggle fullscreen"
+  - Changed "Close dialogs / Go back" to "Exit fullscreen/player"
+  - Changed "Show this help dialog" to "Show keyboard shortcuts"
+  - Removed "Show this help dialog (alternate)" shortcut
+  - "?" key shortcut already opens the dialog (existing implementation)
+- All lint checks pass with zero errors
+- App compiles and runs successfully
+
+Stage Summary:
+- Channel hover cards appear on hover with 500ms delay showing channel preview info and subscribe button
+- Shorts player now has real-time progress bar with time tracking, tap-to-pause, and double-tap-to-like
+- Video cards have right-click context menu with full YouTube-style options
+- "Not interested" hides videos with undo capability via toast notification
+- Mobile responsive improvements: scrollable action buttons, scrollable description, Comments button
+- Sidebar and header mobile transitions smoothed with fade/slide animations
+- Keyboard shortcuts dialog updated with proper action descriptions
+- Zero lint errors, all features functional
+
+---
+Task ID: Session 4 - Bug Fixes, URL Routing, Queue System, Styling Polish, New Features
+Agent: Main Agent (with subagents for parallel work)
+Task: Fix bugs, add hash-based URL routing, video queue panel, autoplay, styling improvements, channel hover cards, context menus, and more
+
+Work Log:
+- Assessed project status by reading worklog.md (1192 lines, extensive history)
+- Performed QA testing via agent-browser - identified key issues:
+  - Channel navigation broken from video player
+  - No URL-based routing
+  - Missing queue panel and autoplay
+  - Styling needed more polish
+- Fixed channel navigation: openChannel now uses setCurrentView logic to properly set miniPlayerVideo
+- Fixed description "Show more" transition: changed max-h from none to max-h-[2000px] for smooth CSS transition
+- Added hash-based URL routing:
+  - All navigation actions update window.location.hash (#/watch?v=ID, #/shorts/ID, #/results?search_query=Q, etc.)
+  - popstate event listener for browser back/forward
+  - Initial hash parsing on mount
+  - Page title updates based on current view
+- Added video queue panel in video player sidebar:
+  - Collapsible queue with drag handle, thumbnail, title, channel, remove button
+  - Clear queue button
+  - Empty state with descriptive text
+- Added autoplay next video feature:
+  - Autoplay toggle (ON/OFF) in related videos section
+  - YouTube IFrame API integration for video end detection
+  - 5-second countdown toast before autoplay
+  - Cancel button to stop autoplay
+  - Plays from queue first, then related videos
+- Comprehensive styling polish across all components:
+  - 12 new keyframe animations (pulseBadge, slideInRightPanel, fadeScale, progressBar, likePop, ripple, checkmark, glowPulse, dotGlow, playingBar, fadeSlideUp, counterUp, underlineSlide)
+  - Header: scroll shadow, search bar expand on focus, theme toggle rotation, notification badge bounce, avatar hover scale, sign-in glow
+  - Video cards: playing indicator, backdrop-blur duration badge, channel avatar ring animation, thin watched progress bar
+  - Sidebar: red left border on active item, 150ms hover transitions, CSS-only tooltips on mini sidebar, uppercase section headings
+  - Category chips: shadow on active, borders for definition, scroll arrow scale animation
+  - Video player: like pop animation, subscribe ripple, description shadow, comments fade-in, related videos hover lift
+  - Shorts player: enhanced gradient, action button press animation, progress dots glow, paused overlay
+  - Search results: hover lift, "Did you mean" suggestion, channel verification badge
+  - Trending view: YouTube red ranking numbers, left border accent, tab underline animation
+  - Channel view: subscribe ripple, stats counter animation
+  - Global: custom selection color, image shimmer, custom tooltips, scrollbar improvements
+- Added channel hover cards:
+  - New component channel-hover-card.tsx using shadcn/ui HoverCard
+  - Shows after 500ms hover delay with avatar, name, verification badge, @handle, subscribers, video count, description, subscribe button
+  - Integrated into video-card.tsx grid layout
+- Improved Shorts player:
+  - Real-time progress bar using YouTube IFrame API (getCurrentTime/getDuration polled every 200ms)
+  - Time display (current/total)
+  - Tap-to-pause toggle
+  - Double-tap-to-like with heart animation
+  - Paused indicator overlay
+- Mobile responsive improvements:
+  - Action buttons horizontally scrollable on mobile
+  - Description box scrollable when expanded
+  - "Comments" button on mobile for scroll-to-comments
+  - Smooth sidebar overlay transitions
+- Added video card context menu (right-click):
+  - Add to queue, Save to Watch later, Save to playlist, Share, Not interested, Don't recommend channel, Report
+  - Uses shadcn/ui ContextMenu component
+- Added "Not interested" feedback:
+  - hiddenVideos state in store
+  - "Video removed" toast with Undo button
+  - Videos hidden from grid when marked not interested
+- Enhanced keyboard shortcuts:
+  - Updated shortcuts dialog with proper key mappings
+  - ? key opens shortcuts dialog
+
+Stage Summary:
+- Hash-based URL routing fully working with browser back/forward support
+- Video queue panel and autoplay next video feature implemented
+- Channel hover cards with 500ms delay
+- Context menu on right-click with "Not interested" feedback
+- Comprehensive styling polish with 12+ new animations
+- Real Shorts progress bar with tap-to-pause and double-tap-to-like
+- Mobile responsive improvements throughout
+- All lint checks pass with zero errors
+- Dev server running with no errors
+
+Current Project Status:
+- Feature-rich YouTube clone with professional-level polish
+- Hash-based URL routing enables deep linking and browser navigation
+- All interactive elements are functional
+- User auth, search, video playback, Shorts, trending, playlists, queue all working
+- Dynamic video fetching supplements 350+ hardcoded videos
+- Dark mode and light mode fully supported
+- Mobile responsive with smooth transitions
+
+Unresolved Issues / Next Phase Priorities:
+- Some YouTube Shorts embeds may show consent dialog before playing
+- Could add YouTube Music and YouTube Kids sections
+- Could add real-time notification updates
+- Could add video upload simulation with drag-and-drop
+- Could add more granular search filters (duration, upload date, type)
+- Could improve picture-in-picture mode
+- Could add video quality/speed controls in custom player

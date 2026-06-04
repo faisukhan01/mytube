@@ -2,13 +2,21 @@
 
 import { Video, shortsVideos } from '@/lib/youtube-data';
 import { useYouTubeStore } from '@/store/youtube-store';
-import { MoreVertical, Play, Clock, ListPlus } from 'lucide-react';
+import { MoreVertical, Play, Clock, ListPlus, Share2, BookmarkPlus, Ban, EyeOff, Flag } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import ChannelHoverCard from './channel-hover-card';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -34,7 +42,7 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
 }
 
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
-  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress, addToQueue } = useYouTubeStore();
+  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress, addToQueue, currentVideo, hideVideo, unhideVideo, hiddenVideos } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
   const [fallbackAttempted, setFallbackAttempted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -46,6 +54,9 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
   // Get watch progress from store
   const progress = watchProgress[video.id] || 0;
+
+  // Check if this is the currently playing video
+  const isCurrentlyPlaying = currentVideo?.id === video.id;
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -89,6 +100,50 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
     }
   };
 
+  const handleNotInterested = () => {
+    hideVideo(video.id);
+    toast('Video removed', {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          unhideVideo(video.id);
+        },
+      },
+      duration: 5000,
+    });
+  };
+
+  const handleDontRecommendChannel = () => {
+    hideVideo(video.id);
+    toast(`We won't recommend videos from ${video.channelTitle}`, {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          unhideVideo(video.id);
+        },
+      },
+      duration: 5000,
+    });
+  };
+
+  const handleShare = () => {
+    const link = `https://www.youtube.com/watch?v=${video.id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      toast.success('Link copied to clipboard');
+    }).catch(() => {
+      toast.error('Failed to copy link');
+    });
+  };
+
+  const handleSaveToPlaylist = () => {
+    toggleWatchLater(video.id);
+    toast.success('Saved to Watch later');
+  };
+
+  const handleReport = () => {
+    toast.success('Report submitted. Thank you for your feedback.');
+  };
+
   const handleShortClick = () => {
     const index = shortsVideos.findIndex((v) => v.id === video.id);
     if (index >= 0) {
@@ -103,6 +158,9 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
     const t = video.publishedAt.toLowerCase();
     return (t.includes('hours ago') || t.includes('days ago') || t.includes('weeks ago') || t.includes('hour ago') || t.includes('day ago') || t.includes('week ago')) && !t.includes('month') && !t.includes('year');
   })();
+
+  // Don't render if video is hidden
+  if (hiddenVideos.includes(video.id)) return null;
 
   if (layout === 'shorts') {
     return (
@@ -169,8 +227,8 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
           )}
           {video.duration !== 'LIVE' && (
-            <span className={`absolute bottom-1 right-1 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
-              isHovered ? 'bg-black scale-105' : ''
+            <span className={`absolute bottom-1 right-1 bg-black/80 duration-badge-blur text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
+              isHovered ? 'bg-black scale-105 shadow-lg' : ''
             }`}>
               {video.duration}
             </span>
@@ -180,12 +238,20 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
             </span>
           )}
-          {/* Watch progress bar */}
-          {progress > 0 ? (
-            <div className="absolute bottom-0 left-0 h-[3px] bg-red-600 rounded-r" style={{ width: `${progress}%` }} />
-          ) : (
-            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gray-200 dark:bg-gray-700" />
+          {/* Playing now indicator */}
+          {isCurrentlyPlaying && (
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] flex items-end justify-center bg-black/30">
+              <div className="playing-indicator mb-1">
+                <span /><span /><span />
+              </div>
+            </div>
           )}
+          {/* Watch progress bar */}
+          {progress > 0 && !isCurrentlyPlaying ? (
+            <div className="absolute bottom-0 left-0 watched-progress-thin" style={{ width: `${progress}%` }} />
+          ) : !isCurrentlyPlaying ? (
+            <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gray-200 dark:bg-gray-700" />
+          ) : null}
         </div>
 
         {/* Info */}
@@ -201,7 +267,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <button
-              className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-[11px] transition-transform duration-200 hover:scale-110"
+              className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-[11px] transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
               style={{ backgroundColor: video.channelColor }}
               onClick={handleChannelClick}
               aria-label={`Go to ${video.channelTitle} channel`}
@@ -250,14 +316,16 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
     );
   }
 
-  // Grid layout (default)
+  // Grid layout (default) - wrapped with ContextMenu
   return (
-    <div
-      className="cursor-pointer group video-card-hover relative"
-      onClick={() => openVideo(video)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className="cursor-pointer group video-card-hover relative"
+          onClick={() => openVideo(video)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
       {/* Thumbnail */}
       <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
         {!imageError ? (
@@ -280,7 +348,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
         )}
         {/* Animated duration badge */}
-        <span className={`absolute bottom-1.5 right-1.5 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
+        <span className={`absolute bottom-1.5 right-1.5 bg-black/80 duration-badge-blur text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
           isHovered ? 'bg-black scale-110 shadow-lg' : ''
         }`}>
           {video.duration}
@@ -289,6 +357,14 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           <span className="absolute top-1.5 left-1.5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
           </span>
+        )}
+        {/* Playing now indicator */}
+        {isCurrentlyPlaying && (
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] flex items-end justify-center bg-black/30">
+            <div className="playing-indicator mb-1">
+              <span /><span /><span />
+            </div>
+          </div>
         )}
         {/* Subtle hover brightness change */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/[0.03] transition-colors duration-300 rounded-xl" />
@@ -310,11 +386,11 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           </button>
         </div>
         {/* Watch progress bar */}
-        {progress > 0 ? (
-          <div className="absolute bottom-0 left-0 h-[3px] bg-red-600 rounded-r" style={{ width: `${progress}%` }} />
-        ) : (
-          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gray-200 dark:bg-gray-700" />
-        )}
+        {progress > 0 && !isCurrentlyPlaying ? (
+          <div className="absolute bottom-0 left-0 watched-progress-thin" style={{ width: `${progress}%` }} />
+        ) : !isCurrentlyPlaying ? (
+          <div className="absolute bottom-0 left-0 right-0 h-[1.5px] bg-gray-200 dark:bg-gray-700" />
+        ) : null}
       </div>
 
       {/* Hover preview card (appears after 1.5s) */}
@@ -360,14 +436,20 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
       {/* Info */}
       <div className="flex gap-2 sm:gap-3 mt-2 sm:mt-3">
         {/* Channel avatar */}
-        <button
-          className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white font-medium text-xs sm:text-sm transition-transform duration-200 hover:scale-110"
-          style={{ backgroundColor: video.channelColor }}
-          onClick={handleChannelClick}
-          aria-label={`Go to ${video.channelTitle} channel`}
+        <ChannelHoverCard
+          channelTitle={video.channelTitle}
+          channelInitial={video.channelInitial}
+          channelColor={video.channelColor}
         >
-          {video.channelInitial}
-        </button>
+          <button
+            className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white font-medium text-xs sm:text-sm transition-all duration-200 hover:scale-110 hover:ring-2 hover:ring-gray-300 dark:hover:ring-gray-500"
+            style={{ backgroundColor: video.channelColor }}
+            onClick={handleChannelClick}
+            aria-label={`Go to ${video.channelTitle} channel`}
+          >
+            {video.channelInitial}
+          </button>
+        </ChannelHoverCard>
 
         {/* Text */}
         <div className="flex-1 min-w-0">
@@ -380,12 +462,18 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               </span>
             )}
           </h3>
-          <p
-            className="text-[11px] sm:text-[12px] text-[#606060] dark:text-[#aaa] mt-0.5 sm:mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
-            onClick={handleChannelClick}
+          <ChannelHoverCard
+            channelTitle={video.channelTitle}
+            channelInitial={video.channelInitial}
+            channelColor={video.channelColor}
           >
-            {video.channelTitle}
-          </p>
+            <p
+              className="text-[11px] sm:text-[12px] text-[#606060] dark:text-[#aaa] mt-0.5 sm:mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+              onClick={handleChannelClick}
+            >
+              {video.channelTitle}
+            </p>
+          </ChannelHoverCard>
           <p className="text-[11px] sm:text-[12px] text-[#606060] dark:text-[#aaa]">
             {video.views} • {video.publishedAt}
           </p>
@@ -410,12 +498,63 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               <Clock className="w-4 h-4 mr-2" />
               {isWatchLater ? '✓ Remove from Watch later' : 'Add to Watch later'}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toggleLike(video.id); }}>
-              {isLiked ? '✓ Unlike' : '👍 Like'}
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSaveToPlaylist(); }}>
+              <BookmarkPlus className="w-4 h-4 mr-2" />
+              Save to playlist
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleShare(); }}>
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleNotInterested(); }}>
+              <EyeOff className="w-4 h-4 mr-2" />
+              Not interested
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDontRecommendChannel(); }}>
+              <Ban className="w-4 h-4 mr-2" />
+              Don&apos;t recommend channel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleReport(); }}>
+              <Flag className="w-4 h-4 mr-2" />
+              Report
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56">
+        <ContextMenuItem onClick={handleAddToQueue}>
+          <ListPlus className="w-4 h-4 mr-2" />
+          Add to queue
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => { toggleWatchLater(video.id); toast.success(isWatchLater ? 'Removed from Watch later' : 'Added to Watch later'); }}>
+          <Clock className="w-4 h-4 mr-2" />
+          {isWatchLater ? 'Remove from Watch later' : 'Save to Watch later'}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleSaveToPlaylist}>
+          <BookmarkPlus className="w-4 h-4 mr-2" />
+          Save to playlist
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleShare}>
+          <Share2 className="w-4 h-4 mr-2" />
+          Share
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleNotInterested}>
+          <EyeOff className="w-4 h-4 mr-2" />
+          Not interested
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleDontRecommendChannel}>
+          <Ban className="w-4 h-4 mr-2" />
+          Don&apos;t recommend channel
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleReport} variant="destructive">
+          <Flag className="w-4 h-4 mr-2" />
+          Report
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

@@ -130,6 +130,11 @@ export default function YouTubeHeader() {
   const [isListening, setIsListening] = useState(true);
   const [notifications, setNotifications] = useState(sampleNotifications);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [themeRotating, setThemeRotating] = useState(false);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const [prevUnreadCount, setPrevUnreadCount] = useState(unreadCount);
+  const [badgeBouncing, setBadgeBouncing] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -139,6 +144,25 @@ export default function YouTubeHeader() {
   useEffect(() => {
     setInputValue(searchQuery);
   }, [searchQuery]);
+
+  // Track scroll for header shadow
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track notification count changes for badge bounce
+  useEffect(() => {
+    if (unreadCount !== prevUnreadCount && prevUnreadCount !== undefined) {
+      setBadgeBouncing(true);
+      const timer = setTimeout(() => setBadgeBouncing(false), 400);
+      return () => clearTimeout(timer);
+    }
+    setPrevUnreadCount(unreadCount);
+  }, [unreadCount, prevUnreadCount]);
 
   // Build search suggestions from video data
   const searchSuggestions = useMemo(() => {
@@ -276,11 +300,9 @@ export default function YouTubeHeader() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#0f0f0f] z-50 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800">
+      <header className={`fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#0f0f0f] z-50 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800 transition-shadow duration-200 ${isScrolled ? 'header-scrolled' : ''}`}>
         {/* Left section */}
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <button
@@ -323,7 +345,7 @@ export default function YouTubeHeader() {
         </div>
 
         {/* Center section - Search bar (desktop) */}
-        <div className="hidden md:flex items-center flex-1 max-w-[640px] mx-4 relative">
+        <div className={`hidden md:flex items-center flex-1 mx-4 relative transition-all duration-200 ${searchFocused ? 'max-w-[660px]' : 'max-w-[640px]'}`}>
           <form onSubmit={handleSearch} className="flex flex-1">
             <div className={`flex flex-1 items-center border rounded-l-[20px] overflow-hidden transition-shadow ${searchFocused || showSuggestions ? 'border-[#1c62b9] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:border-[#1c62b9] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]' : 'border-[#ccc] dark:border-[#303030]'}`}>
               {searchFocused && !showSuggestions && (
@@ -419,8 +441,12 @@ export default function YouTubeHeader() {
         <div className="flex items-center gap-1">
           {/* Theme toggle - hidden on mobile */}
           <button
-            onClick={toggleTheme}
-            className="hidden md:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+            onClick={() => {
+              setThemeRotating(true);
+              toggleTheme();
+              setTimeout(() => setThemeRotating(false), 500);
+            }}
+            className={`hidden md:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-transform duration-500 ${themeRotating ? 'rotate-180' : ''}`}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? (
@@ -467,7 +493,7 @@ export default function YouTubeHeader() {
               <button className={`${user ? 'flex' : 'hidden sm:flex'} p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors relative`} aria-label="Notifications">
                 <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center">{unreadCount}</span>
+                  <span className={`absolute top-1 right-1 bg-red-600 text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center ${badgeBouncing ? 'animate-pulse-badge' : ''}`}>{unreadCount}</span>
                 )}
               </button>
             </PopoverTrigger>
@@ -528,7 +554,7 @@ export default function YouTubeHeader() {
               <DropdownMenuTrigger asChild>
                 <button className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors ml-1" aria-label="User menu">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm ring-2 ring-transparent hover:ring-blue-500 transition-all"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm ring-2 ring-transparent hover:ring-blue-500 hover:scale-105 transition-all duration-200"
                     style={{ backgroundColor: user.color }}
                   >
                     {user.initials}
@@ -574,7 +600,7 @@ export default function YouTubeHeader() {
           ) : (
             <button
               onClick={toggleAuthDialog}
-              className="flex items-center gap-1.5 px-4 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 rounded-full text-[15px] font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors ml-1"
+              className="flex items-center gap-1.5 px-4 py-1.5 border border-blue-500 text-blue-600 dark:text-blue-400 rounded-full text-[15px] font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] transition-all duration-200 ml-1"
               aria-label="Sign in"
             >
               <LogIn className="w-[18px] h-[18px]" />
@@ -590,9 +616,9 @@ export default function YouTubeHeader() {
       {/* Upload Dialog */}
       <UploadDialog open={showUploadDialog} onOpenChange={setShowUploadDialog} />
 
-      {/* Mobile Search Overlay */}
+      {/* Mobile Search Overlay - smooth transition */}
       {showSearch && (
-        <div className="fixed inset-0 bg-white dark:bg-[#0f0f0f] z-[60] md:hidden flex flex-col">
+        <div className="fixed inset-0 bg-white dark:bg-[#0f0f0f] z-[60] md:hidden flex flex-col animate-fade-in">
           <div className="flex items-center h-14 px-2 gap-2 shrink-0">
             <button onClick={() => { setShowSearch(false); setShowSuggestions(false); }} className="p-2">
               <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />

@@ -1,7 +1,45 @@
 import { create } from 'zustand';
-import { Video, Comment } from '@/lib/youtube-data';
+import { Video, Comment, shortsVideos } from '@/lib/youtube-data';
 
 export type ViewMode = 'home' | 'player' | 'search' | 'shorts' | 'trending' | 'history' | 'liked' | 'watchlater' | 'subscriptions' | 'channel' | 'playlist';
+
+// Helper function to update URL hash without triggering popstate
+function updateHash(hash: string) {
+  if (typeof window === 'undefined') return;
+  if (window.location.hash !== hash) {
+    window.history.pushState(null, '', hash);
+  }
+}
+
+// Helper function to parse hash and return view info
+export function parseHash(): { view: ViewMode; videoId?: string; shortIndex?: number; query?: string; channel?: string; playlistId?: string } {
+  if (typeof window === 'undefined') return { view: 'home' };
+  const hash = window.location.hash.slice(1); // Remove #
+  if (!hash || hash === '/') return { view: 'home' };
+  if (hash.startsWith('/watch')) {
+    const params = new URLSearchParams(hash.split('?')[1]);
+    return { view: 'player', videoId: params.get('v') || undefined };
+  }
+  if (hash.startsWith('/shorts/')) {
+    const id = hash.slice(8);
+    return { view: 'shorts', videoId: id };
+  }
+  if (hash.startsWith('/results')) {
+    const params = new URLSearchParams(hash.split('?')[1]);
+    return { view: 'search', query: params.get('search_query') || undefined };
+  }
+  if (hash.startsWith('/trending')) return { view: 'trending' };
+  if (hash.startsWith('/channel/')) return { view: 'channel', channel: decodeURIComponent(hash.slice(9)) };
+  if (hash.startsWith('/history')) return { view: 'history' };
+  if (hash.startsWith('/liked')) return { view: 'liked' };
+  if (hash.startsWith('/watchlater')) return { view: 'watchlater' };
+  if (hash.startsWith('/subscriptions')) return { view: 'subscriptions' };
+  if (hash.startsWith('/playlist')) {
+    const params = new URLSearchParams(hash.split('?')[1]);
+    return { view: 'playlist', playlistId: params.get('list') || undefined };
+  }
+  return { view: 'home' };
+}
 
 export interface UserData {
   id: string;
@@ -46,6 +84,7 @@ interface YouTubeState {
   videoQueue: Video[];
   showQueue: boolean;
   historyPaused: boolean;
+  hiddenVideos: string[];
 
   // Actions
   setCurrentView: (view: ViewMode) => void;
@@ -86,6 +125,10 @@ interface YouTubeState {
   clearQueue: () => void;
   playNext: () => void;
   toggleQueue: () => void;
+
+  // Hidden videos actions
+  hideVideo: (videoId: string) => void;
+  unhideVideo: (videoId: string) => void;
 
   // History actions
   removeFromHistory: (videoId: string) => void;
@@ -145,6 +188,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   videoQueue: [],
   showQueue: false,
   historyPaused: false,
+  hiddenVideos: [],
 
   setCurrentView: (view) => {
     const state = get();
@@ -154,6 +198,13 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     } else {
       set({ currentView: view });
     }
+    // Update URL hash based on view
+    if (view === 'home') updateHash('#/');
+    else if (view === 'trending') updateHash('#/trending');
+    else if (view === 'history') updateHash('#/history');
+    else if (view === 'liked') updateHash('#/liked');
+    else if (view === 'watchlater') updateHash('#/watchlater');
+    else if (view === 'subscriptions') updateHash('#/subscriptions');
   },
   setCurrentVideo: (video) => set({ currentVideo: video }),
   setCurrentShortIndex: (index) => set({ currentShortIndex: index }),
@@ -288,6 +339,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
       miniPlayerVideo: null,
     });
     get().addToHistory(video.id);
+    updateHash(`#/watch?v=${video.id}`);
 
     // Simulate watch progress after 3 seconds
     setTimeout(() => {
@@ -301,10 +353,17 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
       currentView: 'shorts',
       currentShortIndex: index,
     });
+    const shortVideo = shortsVideos[index];
+    if (shortVideo) {
+      updateHash(`#/shorts/${shortVideo.id}`);
+    } else {
+      updateHash('#/shorts');
+    }
   },
 
   search: (query) => {
     set({ searchQuery: query, isSearching: true, currentView: 'search' });
+    updateHash(`#/results?search_query=${encodeURIComponent(query)}`);
   },
 
   goHome: () => {
@@ -326,12 +385,18 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
         searchResults: [],
       });
     }
+    updateHash('#/');
   },
 
-  openChannel: (channelName) => set({
-    currentView: 'channel',
-    selectedChannel: channelName,
-  }),
+  openChannel: (channelName) => {
+    const state = get();
+    if (state.currentView === 'player' && state.currentVideo) {
+      set({ currentView: 'channel', selectedChannel: channelName, miniPlayerVideo: state.currentVideo });
+    } else {
+      set({ currentView: 'channel', selectedChannel: channelName });
+    }
+    updateHash(`#/channel/${encodeURIComponent(channelName)}`);
+  },
 
   // Playlist actions
   createPlaylist: (name, description, visibility) => {
@@ -387,10 +452,13 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     });
   },
 
-  openPlaylist: (playlistId) => set({
-    currentView: 'playlist',
-    selectedPlaylistId: playlistId,
-  }),
+  openPlaylist: (playlistId) => {
+    set({
+      currentView: 'playlist',
+      selectedPlaylistId: playlistId,
+    });
+    updateHash(`#/playlist?list=${playlistId}`);
+  },
 
   setShowPlaylistDialog: (show) => set({ showPlaylistDialog: show }),
 
@@ -438,6 +506,10 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   },
 
   toggleQueue: () => set((s) => ({ showQueue: !s.showQueue })),
+
+  // Hidden videos actions
+  hideVideo: (videoId) => set((s) => ({ hiddenVideos: [...s.hiddenVideos, videoId] })),
+  unhideVideo: (videoId) => set((s) => ({ hiddenVideos: s.hiddenVideos.filter((id) => id !== videoId) })),
 
   // History actions
   removeFromHistory: (videoId) => set((s) => ({

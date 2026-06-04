@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useYouTubeStore } from '@/store/youtube-store';
+import { useEffect, useCallback } from 'react';
+import { useYouTubeStore, parseHash } from '@/store/youtube-store';
+import { getVideoById, shortsVideos } from '@/lib/youtube-data';
 import YouTubeHeader from '@/components/youtube/header';
 import YouTubeSidebar from '@/components/youtube/sidebar';
 import CategoryChips from '@/components/youtube/category-chips';
@@ -22,7 +23,15 @@ import {
 import KeyboardShortcutsDialog from '@/components/youtube/keyboard-shortcuts-dialog';
 
 export default function Home() {
-  const { currentView, sidebarOpen, sidebarMini, checkSession } = useYouTubeStore();
+  const {
+    currentView,
+    sidebarOpen,
+    sidebarMini,
+    currentVideo,
+    searchQuery,
+    checkSession,
+    set,
+  } = useYouTubeStore();
 
   const showCategoryChips = currentView === 'home';
   const showSidebar = currentView !== 'player' && currentView !== 'shorts';
@@ -31,6 +40,91 @@ export default function Home() {
   useEffect(() => {
     checkSession();
   }, [checkSession]);
+
+  // Handle hash-based URL routing: parse initial hash and listen for popstate
+  const applyHashView = useCallback((isPopstate = false) => {
+    const hashInfo = parseHash();
+    void isPopstate; // Used to indicate browser navigation vs initial load
+
+    if (hashInfo.view === 'home') {
+      set({
+        currentView: 'home',
+        currentVideo: null,
+        searchQuery: '',
+        searchResults: [],
+      });
+    } else if (hashInfo.view === 'player' && hashInfo.videoId) {
+      const video = getVideoById(hashInfo.videoId);
+      if (video) {
+        set({
+          currentView: 'player',
+          currentVideo: video,
+          miniPlayerVideo: null,
+        });
+      }
+    } else if (hashInfo.view === 'shorts') {
+      if (hashInfo.videoId) {
+        const index = shortsVideos.findIndex((v) => v.id === hashInfo.videoId);
+        set({
+          currentView: 'shorts',
+          currentShortIndex: index >= 0 ? index : 0,
+        });
+      } else {
+        set({
+          currentView: 'shorts',
+          currentShortIndex: hashInfo.shortIndex || 0,
+        });
+      }
+    } else if (hashInfo.view === 'search' && hashInfo.query) {
+      set({
+        currentView: 'search',
+        searchQuery: hashInfo.query,
+        isSearching: true,
+      });
+    } else if (hashInfo.view === 'trending') {
+      set({ currentView: 'trending' });
+    } else if (hashInfo.view === 'channel' && hashInfo.channel) {
+      set({ currentView: 'channel', selectedChannel: hashInfo.channel });
+    } else if (hashInfo.view === 'history') {
+      set({ currentView: 'history' });
+    } else if (hashInfo.view === 'liked') {
+      set({ currentView: 'liked' });
+    } else if (hashInfo.view === 'watchlater') {
+      set({ currentView: 'watchlater' });
+    } else if (hashInfo.view === 'subscriptions') {
+      set({ currentView: 'subscriptions' });
+    } else if (hashInfo.view === 'playlist' && hashInfo.playlistId) {
+      set({ currentView: 'playlist', selectedPlaylistId: hashInfo.playlistId });
+    }
+  }, [set]);
+
+  // Parse initial hash on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash !== '#' && hash !== '#/') {
+      applyHashView();
+    }
+  }, [applyHashView]);
+
+  // Listen for popstate events (browser back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      applyHashView(true);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [applyHashView]);
+
+  // Update page title based on current view
+  useEffect(() => {
+    if (currentView === 'player' && currentVideo) {
+      document.title = `${currentVideo.title} - YouTube`;
+    } else if (currentView === 'search' && searchQuery) {
+      document.title = `${searchQuery} - YouTube`;
+    } else {
+      document.title = 'YouTube';
+    }
+  }, [currentView, currentVideo, searchQuery]);
 
   // Build class names for the main content based on sidebar state
   const getMainClasses = () => {

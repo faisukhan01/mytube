@@ -140,7 +140,7 @@ export default function SearchResults() {
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto page-transition">
       {/* Search filter buttons - like real YouTube */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 transition-opacity duration-200" style={{ scrollbarWidth: 'none' }}>
         <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors shrink-0">
           <Filter className="w-4 h-4" />
           Filters
@@ -164,6 +164,28 @@ export default function SearchResults() {
           );
         })}
       </div>
+
+      {/* "Did you mean" spelling correction */}
+      {!isLoading && results.length > 0 && searchQuery && (
+        <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+          Showing results for <span className="font-medium text-gray-900 dark:text-white">{searchQuery}</span>
+          {searchQuery.includes(' ') && (
+            <>
+              {' '}Did you mean{' '}
+              <button
+                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                onClick={() => {
+                  const { setSearchQuery } = useYouTubeStore.getState();
+                  setSearchQuery(searchQuery.split(' ').slice(0, -1).join(' '));
+                }}
+              >
+                {searchQuery.split(' ').slice(0, -1).join(' ')}
+              </button>
+              ?
+            </>
+          )}
+        </div>
+      )}
 
       {/* "Search instead for" suggestion */}
       {searchSuggestion && !isLoading && results.length > 0 && (
@@ -213,7 +235,7 @@ export default function SearchResults() {
       {selectedFilter === 'Channels' && !isLoading && !error && channelResults.length > 0 && (
         <div className="space-y-3 mb-6">
           {channelResults.map((channel) => (
-            <div key={channel.name} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors cursor-pointer">
+            <div key={channel.name} className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] hover:shadow-sm transition-all duration-150 cursor-pointer">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl"
                 style={{ backgroundColor: channel.color }}
@@ -221,7 +243,9 @@ export default function SearchResults() {
                 {channel.initial}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{channel.name}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">{channel.name}
+                  <svg className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </p>
                 <p className="text-[12px] text-[#606060] dark:text-[#aaa]">{channel.videoCount} videos</p>
               </div>
             </div>

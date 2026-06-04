@@ -36,6 +36,10 @@ interface YTPlayerEvent {
 
 interface YTPlayer {
   destroy: () => void;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  pauseVideo: () => void;
+  playVideo: () => void;
 }
 
 declare global {
@@ -50,6 +54,8 @@ declare global {
       }) => YTPlayer;
       PlayerState: {
         ENDED: number;
+        PLAYING: number;
+        PAUSED: number;
       };
     };
     onYouTubeIframeAPIReady?: () => void;
@@ -85,11 +91,18 @@ export default function ShortsPlayer() {
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState(sampleShortComments);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const playerRef = useRef<YTPlayer | null>(null);
   const swipeHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastTapRef = useRef<number>(0);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalShorts = shortsVideos.length;
   const currentShort = shortsVideos[currentShortIndex];
@@ -99,6 +112,9 @@ export default function ShortsPlayer() {
       setCurrentShortIndex(currentShortIndex + 1);
       setVideoError(false);
       setIsVideoReady(false);
+      setIsPaused(false);
+      setCurrentTime(0);
+      setDuration(0);
       setShowSwipeHint(false);
     }
   }, [currentShortIndex, totalShorts, setCurrentShortIndex]);
@@ -108,6 +124,9 @@ export default function ShortsPlayer() {
       setCurrentShortIndex(currentShortIndex - 1);
       setVideoError(false);
       setIsVideoReady(false);
+      setIsPaused(false);
+      setCurrentTime(0);
+      setDuration(0);
       setShowSwipeHint(false);
     }
   }, [currentShortIndex, setCurrentShortIndex]);
@@ -123,6 +142,19 @@ export default function ShortsPlayer() {
       if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
     };
   }, [videoError, goNext]);
+
+  // Clean up progress interval on unmount or index change
+  useEffect(() => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [currentShortIndex]);
 
   // Load YouTube IFrame API and set up auto-advance
   useEffect(() => {
@@ -143,10 +175,24 @@ export default function ShortsPlayer() {
           events: {
             onReady: () => {
               setIsVideoReady(true);
+              // Start tracking progress
+              if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+              progressIntervalRef.current = setInterval(() => {
+                try {
+                  const player = playerRef.current;
+                  if (player && typeof player.getCurrentTime === 'function') {
+                    setCurrentTime(player.getCurrentTime());
+                    setDuration(player.getDuration());
+                  }
+                } catch {
+                  // ignore
+                }
+              }, 200);
             },
             onStateChange: (event: YTPlayerEvent) => {
               // Auto-advance when video ends (state 0)
               if (event.data === 0) {
+                if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
                 setCurrentShortIndex((prev: number) => {
                   if (prev < totalShorts - 1) return prev + 1;
                   return prev;
@@ -155,7 +201,12 @@ export default function ShortsPlayer() {
               // Video is playing
               if (event.data === 1) {
                 setIsVideoReady(true);
+                setIsPaused(false);
                 setVideoError(false);
+              }
+              // Video is paused
+              if (event.data === 2) {
+                setIsPaused(true);
               }
             },
             onError: () => {
@@ -329,6 +380,58 @@ export default function ShortsPlayer() {
     return num;
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Tap-to-pause and double-tap-to-like
+  const handleVideoTap = () => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapRef.current;
+
+    if (timeSinceLastTap < 300) {
+      // Double tap - like
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+        tapTimeoutRef.current = null;
+      }
+      if (!isLiked) {
+        toggleLike(currentShort.id);
+        setShowHeartAnimation(true);
+        setTimeout(() => setShowHeartAnimation(false), 800);
+      } else {
+        // Show heart animation even if already liked
+        setShowHeartAnimation(true);
+        setTimeout(() => setShowHeartAnimation(false), 800);
+      }
+      lastTapRef.current = 0;
+    } else {
+      // Single tap - wait to see if second tap comes
+      lastTapRef.current = now;
+      tapTimeoutRef.current = setTimeout(() => {
+        // Single tap confirmed - toggle pause
+        try {
+          const player = playerRef.current;
+          if (player && typeof player.pauseVideo === 'function') {
+            if (isPaused) {
+              player.playVideo();
+            } else {
+              player.pauseVideo();
+            }
+          }
+        } catch {
+          // ignore
+        }
+        lastTapRef.current = 0;
+      }, 300);
+    }
+  };
+
+  // Progress percentage
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div className="min-h-[calc(100vh-56px)] bg-[#0f0f0f] dark:bg-[#0f0f0f] flex items-start justify-center">
       {/* Back button */}
@@ -368,6 +471,46 @@ export default function ShortsPlayer() {
               key={currentShort.id}
             />
 
+            {/* Tap overlay for pause/play and double-tap like */}
+            <div
+              className="absolute inset-0 z-10 cursor-pointer"
+              onClick={handleVideoTap}
+            />
+
+            {/* Heart animation for double-tap like */}
+            {showHeartAnimation && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                <svg className="w-24 h-24 text-white animate-scale-in" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1" style={{ filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.5))' }}>
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </div>
+            )}
+
+            {/* Paused indicator */}
+            {isPaused && !videoError && (
+              <div className="absolute inset-0 z-15 flex items-center justify-center pointer-events-none bg-black/20">
+                <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
+                  <Play className="w-8 h-8 text-white ml-1" />
+                </div>
+              </div>
+            )}
+
+            {/* Progress bar at top with time display */}
+            <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-2 flex items-center gap-2">
+              <span className="text-white/70 text-[10px] font-medium tabular-nums">
+                {formatTime(currentTime)}
+              </span>
+              <div className="flex-1 h-[3px] bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white/80 rounded-full transition-all duration-200 ease-linear"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <span className="text-white/70 text-[10px] font-medium tabular-nums">
+                {formatTime(duration)}
+              </span>
+            </div>
+
             {/* Video unavailable fallback overlay */}
             {videoError && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
@@ -396,7 +539,7 @@ export default function ShortsPlayer() {
             )}
 
             {/* Bottom gradient overlay for text readability */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-black/30 pointer-events-none">
               {/* Channel info and title */}
               <div className="p-3 pb-4">
                 {/* Music info if available */}
@@ -467,10 +610,7 @@ export default function ShortsPlayer() {
               </div>
             )}
 
-            {/* Progress bar at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10">
-              <div className="h-full bg-white/80 transition-all duration-300" style={{ width: '0%' }} />
-            </div>
+            {/* Paused overlay */}
           </div>
 
           {/* Right-side action bar */}
@@ -481,7 +621,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group relative"
               aria-label={isLiked ? 'Unlike' : 'Like'}
             >
-              <div className={`p-2 rounded-full transition-all duration-200 ${isLiked ? 'bg-white/20 scale-110' : 'hover:bg-white/10'}`}>
+              <div className={`p-2 rounded-full transition-all duration-200 active:scale-90 ${isLiked ? 'bg-white/20 scale-110' : 'hover:bg-white/10'}`}>
                 <ThumbsUp className={`w-6 h-6 transition-colors duration-200 ${isLiked ? 'text-white' : 'text-white/80 group-hover:text-white'}`} fill={isLiked ? 'white' : 'none'} />
               </div>
               <span className="text-white/80 text-[11px] relative">
@@ -499,7 +639,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Dislike"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-90">
                 <ThumbsDown className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Dislike</span>
@@ -511,7 +651,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Comments"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-90">
                 <MessageCircle className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">{comments.length > 5 ? `${comments.length - 5}K` : comments.length}</span>
@@ -523,7 +663,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Share"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-90">
                 <Share2 className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Share</span>
@@ -535,7 +675,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label="Remix"
             >
-              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
+              <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200 active:scale-90">
                 <Repeat2 className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
               <span className="text-white/80 text-[11px]">Remix</span>
@@ -547,7 +687,7 @@ export default function ShortsPlayer() {
               className="flex flex-col items-center gap-0.5 group"
               aria-label={isSaved ? 'Remove from Watch later' : 'Save'}
             >
-              <div className={`p-2 rounded-full transition-all duration-200 ${isSaved ? 'bg-white/20 scale-110' : 'hover:bg-white/10'}`}>
+              <div className={`p-2 rounded-full transition-all duration-200 active:scale-90 ${isSaved ? 'bg-white/20 scale-110' : 'hover:bg-white/10'}`}>
                 <svg className={`w-6 h-6 transition-colors duration-200 ${isSaved ? 'text-white' : 'text-white/80 group-hover:text-white'}`} viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                 </svg>
@@ -588,7 +728,7 @@ export default function ShortsPlayer() {
                 key={visualIndex}
                 className={`h-[2px] rounded-full transition-all duration-300 ${
                   visualIndex === currentShortIndex
-                    ? 'w-4 bg-white'
+                    ? 'w-4 bg-white animate-dot-glow'
                     : 'w-1.5 bg-white/30'
                 }`}
               />

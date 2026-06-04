@@ -200,9 +200,10 @@ export default function YouTubeSidebar() {
           <button
             key={item.label}
             onClick={() => handleItemClick(item)}
-            className={`flex flex-col items-center justify-center w-full py-4 px-1 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
+            className={`flex flex-col items-center justify-center w-full py-4 px-1 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150 tooltip mini-tooltip ${
               currentView === item.view ? 'font-medium' : ''
             }`}
+            data-tooltip={item.label}
           >
             <div className={`${currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>
               {item.icon}
@@ -216,17 +217,17 @@ export default function YouTubeSidebar() {
 
   return (
     <>
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile - smooth transition */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-200 animate-fade-in"
           onClick={() => useYouTubeStore.getState().toggleSidebar()}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-14 bottom-0 w-[240px] bg-white dark:bg-[#0f0f0f] z-40 overflow-y-auto transition-transform duration-200 ${
+        className={`fixed left-0 top-14 bottom-0 w-[240px] bg-white dark:bg-[#0f0f0f] z-40 overflow-y-auto transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:hidden'
         }`}
       >
@@ -259,8 +260,8 @@ export default function YouTubeSidebar() {
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className={`flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
-                currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
+              className={`flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150 ${
+                currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium sidebar-active-indicator' : ''
               }`}
             >
               <span className={currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}>
@@ -270,19 +271,19 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
 
           {/* You section */}
           <div className="flex items-center gap-1 px-3 mb-0.5">
-            <span className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">You</span>
+            <span className="text-[13px] text-gray-800 dark:text-gray-200 font-medium uppercase tracking-wide">You</span>
             <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
           {youItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className={`flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
-                currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
+              className={`flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150 ${
+                currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium sidebar-active-indicator' : ''
               }`}
             >
               <span className={currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}>
@@ -292,44 +293,44 @@ export default function YouTubeSidebar() {
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
 
           {/* Explore section */}
-          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium">Explore</h3>
+          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium uppercase tracking-wide">Explore</h3>
           {exploreItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
+              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150"
             >
               <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
               <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
 
           {/* More from YouTube */}
-          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium">More from YouTube</h3>
+          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium uppercase tracking-wide">More from YouTube</h3>
           {moreFromYouTubeItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
+              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150"
             >
               <span>{item.icon}</span>
               <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-2 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700 transition-all duration-300" />
 
           {/* Settings & more */}
           {moreItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
+              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors duration-150"
             >
               <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
               <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>

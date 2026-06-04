@@ -132,6 +132,8 @@ export default function ChannelView() {
           className="absolute inset-0"
           style={{
             background: `linear-gradient(135deg, ${channelColor}cc, ${channelColor}88, ${channelColor}44)`,
+            transform: 'translateZ(0)',
+            transition: 'transform 0.1s ease-out',
           }}
         />
         <div className="absolute inset-0 bg-black/10" />
@@ -198,7 +200,7 @@ export default function ChannelView() {
             <Button
               onClick={() => setIsSubscribed(!isSubscribed)}
               variant="default"
-              className={`rounded-full text-sm font-medium px-6 h-10 transition-colors ${
+              className={`rounded-full text-sm font-medium px-6 h-10 transition-colors ripple-container ${
                 isSubscribed
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
                   : 'bg-[#ff0000] hover:bg-[#cc0000] text-white'
@@ -533,27 +535,27 @@ export default function ChannelView() {
             </div>
 
             {/* Stats */}
-            <div className="bg-gray-50 dark:bg-[#272727] rounded-xl p-5 space-y-3">
+            <div className="bg-gray-50 dark:bg-[#272727] rounded-xl p-5">
               <h3 className="text-base font-medium text-gray-900 dark:text-white mb-3">Stats</h3>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm animate-counter-up">
                 <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
                 <span className="text-gray-700 dark:text-gray-300">
                   {totalViews} total views
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm animate-counter-up" style={{ animationDelay: '0.1s' }}>
                 <Users className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
                 <span className="text-gray-700 dark:text-gray-300">{subscribers} subscribers</span>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm animate-counter-up" style={{ animationDelay: '0.2s' }}>
                 <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
                 <span className="text-gray-700 dark:text-gray-300">Joined {joinDate}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm animate-counter-up" style={{ animationDelay: '0.3s' }}>
                 <Film className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
                 <span className="text-gray-700 dark:text-gray-300">{allChannelVideos.length} videos</span>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm animate-counter-up" style={{ animationDelay: '0.4s' }}>
                 <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
                 <span className="text-gray-700 dark:text-gray-300">{location}</span>
               </div>

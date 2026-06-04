@@ -11,6 +11,7 @@ import {
   Download,
   MoreHorizontal,
   ChevronDown,
+  MessageCircle,
   ChevronUp,
   Bell,
   Check,
@@ -23,8 +24,13 @@ import {
   ListPlus,
   Copy,
   Mail,
+  GripVertical,
+  X,
+  Trash2,
+  Play,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -171,7 +177,7 @@ function RelatedVideoSkeleton() {
 }
 
 export default function VideoPlayerView() {
-  const { currentVideo, toggleLike, toggleWatchLater, likedVideos, watchLater, openChannel, user, playlists } = useYouTubeStore();
+  const { currentVideo, toggleLike, toggleWatchLater, likedVideos, watchLater, openChannel, user, playlists, videoQueue, removeFromQueue, clearQueue, showQueue, toggleQueue, playNext, openVideo } = useYouTubeStore();
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [sortComments, setSortComments] = useState<'top' | 'newest'>('top');
   const [commentText, setCommentText] = useState('');
@@ -185,6 +191,13 @@ export default function VideoPlayerView() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
+  const [likeAnimating, setLikeAnimating] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
+  const [isQueueExpanded, setIsQueueExpanded] = useState(true);
+  const autoplayCancelledRef = useRef(false);
+  const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playerCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const baseComments = useMemo(() => {
     if (!currentVideo) return [];
@@ -219,6 +232,116 @@ export default function VideoPlayerView() {
     setExpandedReplies(prev => new Set(prev).add(commentId));
   }, []);
 
+  // Load YouTube IFrame API
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !(window as unknown as Record<string, unknown>).YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+  }, []);
+
+  // Handle video ended - autoplay next
+  const handleVideoEnded = useCallback(() => {
+    if (!autoplay) return;
+
+    autoplayCancelledRef.current = false;
+    let countdown = 5;
+    const nextVideo = videoQueue.length > 0 ? videoQueue[0] : relatedVideos[0];
+    if (!nextVideo) return;
+
+    const nextTitle = nextVideo.title.length > 40 ? nextVideo.title.substring(0, 40) + '...' : nextVideo.title;
+    const toastId = toast(`Playing next in ${countdown}s: ${nextTitle}`, {
+      duration: 6000,
+      action: {
+        label: 'Cancel',
+        onClick: () => {
+          autoplayCancelledRef.current = true;
+          if (countdownTimeoutRef.current) {
+            clearTimeout(countdownTimeoutRef.current);
+            countdownTimeoutRef.current = null;
+          }
+          toast.dismiss(toastId);
+        },
+      },
+    });
+
+    const tick = () => {
+      countdown -= 1;
+      if (countdown <= 0 && !autoplayCancelledRef.current) {
+        toast.dismiss(toastId);
+        if (videoQueue.length > 0) {
+          playNext();
+        } else if (relatedVideos[0]) {
+          openVideo(relatedVideos[0]);
+        }
+        return;
+      }
+      if (!autoplayCancelledRef.current) {
+        toast(`Playing next in ${countdown}s: ${nextTitle}`, {
+          id: toastId,
+          duration: 6000,
+          action: {
+            label: 'Cancel',
+            onClick: () => {
+              autoplayCancelledRef.current = true;
+              if (countdownTimeoutRef.current) {
+                clearTimeout(countdownTimeoutRef.current);
+                countdownTimeoutRef.current = null;
+              }
+              toast.dismiss(toastId);
+            },
+          },
+        });
+        countdownTimeoutRef.current = setTimeout(tick, 1000);
+      }
+    };
+    countdownTimeoutRef.current = setTimeout(tick, 1000);
+  }, [autoplay, videoQueue, relatedVideos, playNext, openVideo]);
+
+  // Track player state via YouTube IFrame API
+  useEffect(() => {
+    if (playerCheckRef.current) {
+      clearInterval(playerCheckRef.current);
+    }
+    if (countdownTimeoutRef.current) {
+      clearTimeout(countdownTimeoutRef.current);
+      countdownTimeoutRef.current = null;
+    }
+
+    const checkPlayer = setInterval(() => {
+      const iframe = document.querySelector('iframe');
+      if (iframe && (window as unknown as Record<string, unknown>).YT && ((window as unknown as Record<string, { Player: new (...args: unknown[]) => unknown }>).YT).Player) {
+        clearInterval(checkPlayer);
+        try {
+          const YTPlayer = ((window as unknown as Record<string, { Player: new (...args: unknown[]) => unknown }>).YT).Player;
+          new YTPlayer(iframe, {
+            events: {
+              onStateChange: (event: { data: number }) => {
+                if (event.data === 0) {
+                  handleVideoEnded();
+                }
+              },
+            },
+          });
+        } catch {
+          // Player API not ready yet, will retry on next video change
+        }
+      }
+    }, 500);
+    playerCheckRef.current = checkPlayer;
+
+    return () => {
+      if (playerCheckRef.current) {
+        clearInterval(playerCheckRef.current);
+      }
+      if (countdownTimeoutRef.current) {
+        clearTimeout(countdownTimeoutRef.current);
+      }
+    };
+  }, [currentVideo?.id, handleVideoEnded]);
+
   if (!currentVideo) return null;
 
   const handleShare = () => {
@@ -229,6 +352,8 @@ export default function VideoPlayerView() {
     const link = `https://www.youtube.com/watch?v=${currentVideo.id}`;
     navigator.clipboard.writeText(link).then(() => {
       toast.success('Link copied to clipboard');
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
       setShowShareDialog(false);
     }).catch(() => {
       toast.error('Failed to copy link');
@@ -356,7 +481,8 @@ export default function VideoPlayerView() {
             </div>
           )}
           <iframe
-            src={`https://www.youtube.com/embed/${currentVideo.id}?autoplay=1&rel=0`}
+            id="yt-player"
+            src={`https://www.youtube.com/embed/${currentVideo.id}?autoplay=1&rel=0&enablejsapi=1`}
             title={currentVideo.title}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -416,7 +542,7 @@ export default function VideoPlayerView() {
               <Button
                 variant="default"
                 onClick={handleSubscribe}
-                className={`rounded-full text-sm font-medium px-4 h-9 transition-colors ${
+                className={`rounded-full text-sm font-medium px-4 h-9 transition-colors ripple-container ${
                   isSubscribed
                     ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
                     : 'bg-[#ff0000] hover:bg-[#cc0000] text-white'
@@ -436,17 +562,17 @@ export default function VideoPlayerView() {
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Action buttons - scrollable on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap" style={{ scrollbarWidth: 'none' }}>
             {/* Like/Dislike */}
             <div className="flex items-center bg-gray-100 dark:bg-[#272727] rounded-full">
               <button
-                onClick={() => toggleLike(currentVideo.id)}
+                onClick={() => { toggleLike(currentVideo.id); setLikeAnimating(true); setTimeout(() => setLikeAnimating(false), 400); }}
                 className={`flex items-center gap-1.5 pl-4 pr-2.5 py-2 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] transition-colors rounded-l-full ${
                   isLiked ? 'text-blue-600' : 'text-gray-800 dark:text-gray-200'
                 }`}
               >
-                <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                <ThumbsUp className={`w-5 h-5 ${isLiked ? 'fill-current' : ''} ${likeAnimating ? 'animate-like-pop' : ''}`} />
                 <span className="text-[12px] font-medium">{currentVideo.likes || '0'}</span>
               </button>
               <div className="h-6 w-[1px] bg-gray-300 dark:bg-gray-600 mx-2" />
@@ -571,13 +697,13 @@ export default function VideoPlayerView() {
           </div>
         </div>
 
-        {/* Description */}
-        <div className="mt-4 bg-gray-100 dark:bg-[#272727] rounded-xl p-3">
+        {/* Description - scrollable on mobile */}
+        <div className={`mt-4 bg-gray-100 dark:bg-[#272727] rounded-xl p-3 shadow-sm border transition-all duration-300 ${showFullDescription ? 'shadow-md border-gray-200 dark:border-gray-600' : 'border-transparent'} ${showFullDescription ? 'max-h-[400px] sm:max-h-[600px] overflow-y-auto' : ''}`}>
           <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
             <span>{currentVideo.views}</span>
             <span>{currentVideo.publishedAt}</span>
           </div>
-          <div className={`mt-2 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line overflow-hidden transition-all duration-300 ${!showFullDescription ? 'max-h-[60px]' : ''}`}>
+          <div className={`mt-2 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line overflow-hidden transition-all duration-300 ease-in-out ${!showFullDescription ? 'max-h-[60px]' : 'max-h-[2000px]'}`}>
             {formatDescriptionText(currentVideo.description)}
             {showFullDescription && (
               <>
@@ -642,11 +768,22 @@ export default function VideoPlayerView() {
         </div>
 
         {/* Comments section */}
-        <div className="mt-6">
-          <div className="flex items-center gap-6 mb-6">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="mt-6" id="comments-section">
+          <div className="flex items-center gap-4 sm:gap-6 mb-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
               {comments.length} Comments
             </h3>
+            {/* Comments button for mobile - scrolls to section */}
+            <button
+              className="sm:hidden flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400"
+              onClick={() => {
+                const el = document.getElementById('comments-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              Comments
+            </button>
             <div className="flex items-center gap-2">
               <Select value={sortComments} onValueChange={(v) => setSortComments(v as 'top' | 'newest')}>
                 <SelectTrigger className="h-8 w-auto gap-1 border-none bg-transparent shadow-none px-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#272727]">
@@ -708,7 +845,7 @@ export default function VideoPlayerView() {
           </div>
 
           {/* Comments list */}
-          <div className="space-y-5">
+          <div className="space-y-5 animate-fade-in">
             {comments.map((comment) => {
               const hasReplies = comment.replies && comment.replies.length > 0;
               const isExpanded = expandedReplies.has(comment.id);
@@ -852,6 +989,113 @@ export default function VideoPlayerView() {
 
       {/* Related videos sidebar */}
       <div className="lg:w-[400px] shrink-0">
+        {/* Up next / Autoplay toggle */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-gray-900 dark:text-white">Up next</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600 dark:text-gray-400">Autoplay</span>
+            <Switch
+              checked={autoplay}
+              onCheckedChange={setAutoplay}
+              className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-600"
+            />
+          </div>
+        </div>
+
+        {/* Queue Panel */}
+        {videoQueue.length > 0 && (
+          <div className="mb-3 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            {/* Queue header */}
+            <button
+              onClick={() => setIsQueueExpanded(!isQueueExpanded)}
+              className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] hover:bg-gray-100 dark:hover:bg-[#222] transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <ListVideo className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">Queue</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">({videoQueue.length})</span>
+              </div>
+              {isQueueExpanded ? (
+                <ChevronUp className="w-4 h-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              )}
+            </button>
+
+            {/* Queue items */}
+            {isQueueExpanded && (
+              <>
+                <div className="max-h-64 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                  {videoQueue.map((video) => (
+                    <div
+                      key={video.id}
+                      className="flex items-start gap-2 px-3 py-2 hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors group"
+                    >
+                      {/* Drag handle */}
+                      <GripVertical className="w-4 h-4 text-gray-400 shrink-0 mt-1 cursor-grab" />
+
+                      {/* Thumbnail */}
+                      <div className="relative shrink-0 w-[100px] h-[56px] rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
+                        <img
+                          src={video.thumbnail}
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        {video.duration && video.duration !== 'LIVE' && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-[10px] font-medium px-0.5 py-px rounded-sm">
+                            {video.duration}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-900 dark:text-white line-clamp-2 leading-4">{video.title}</p>
+                        <p className="text-[11px] text-[#606060] dark:text-[#aaa] mt-0.5">{video.channelTitle}</p>
+                      </div>
+
+                      {/* Remove button */}
+                      <button
+                        onClick={() => removeFromQueue(video.id)}
+                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-all shrink-0"
+                        aria-label="Remove from queue"
+                      >
+                        <X className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Clear queue button */}
+                <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2">
+                  <button
+                    onClick={clearQueue}
+                    className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Clear queue
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Empty queue state (show when queue is empty and toggle is on) */}
+        {videoQueue.length === 0 && showQueue && (
+          <div className="mb-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-[#1a1a1a]">
+            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">Your queue is empty</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Add videos to your queue by clicking &quot;Add to queue&quot; on any video</p>
+            <button
+              onClick={toggleQueue}
+              className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
+            >
+              Hide queue
+            </button>
+          </div>
+        )}
+
         {/* Chips for related */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {['All', 'Related', 'Recently uploaded', 'Watched'].map((chip) => (
@@ -874,7 +1118,9 @@ export default function VideoPlayerView() {
             ))
           ) : (
             relatedVideos.map((video) => (
-              <VideoCard key={video.id} video={video} layout="list" />
+              <div key={video.id} className="hover:-translate-y-0.5 transition-transform duration-150">
+                <VideoCard video={video} layout="list" />
+              </div>
             ))
           )}
         </div>
@@ -906,8 +1152,8 @@ export default function VideoPlayerView() {
                 size="sm"
                 className="shrink-0 gap-1.5"
               >
-                <Copy className="w-3.5 h-3.5" />
-                Copy
+                <Copy className={`w-3.5 h-3.5 transition-all ${copySuccess ? 'text-green-500' : ''}`} />
+                {copySuccess ? '✓' : 'Copy'}
               </Button>
             </div>
             <div className="flex gap-4 justify-center pt-2">

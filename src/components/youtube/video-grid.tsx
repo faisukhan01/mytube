@@ -289,7 +289,7 @@ export default function VideoGrid() {
         </div>
       </div>
 
-      {/* Video grid */}
+      {/* Video grid - 1 col mobile, 2 tablet, 3 desktop, 4 wide */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:gap-y-10">
         {allVideos.map((video, index) => (
           <div key={`${video.id}-${index}`} className={`stagger-${Math.min((index % 8) + 1, 8)} animate-slide-up`}>
