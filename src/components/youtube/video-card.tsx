@@ -34,7 +34,7 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
 }
 
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
-  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress } = useYouTubeStore();
+  const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress, addToQueue } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
   const [fallbackAttempted, setFallbackAttempted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -75,6 +75,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
   const handleAddToQueue = (e: React.MouseEvent) => {
     e.stopPropagation();
+    addToQueue(video);
     toast.success(`"${video.title}" added to queue`);
   };
 
@@ -357,10 +358,10 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
       )}
 
       {/* Info */}
-      <div className="flex gap-3 mt-3">
+      <div className="flex gap-2 sm:gap-3 mt-2 sm:mt-3">
         {/* Channel avatar */}
         <button
-          className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm transition-transform duration-200 hover:scale-110"
+          className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white font-medium text-xs sm:text-sm transition-transform duration-200 hover:scale-110"
           style={{ backgroundColor: video.channelColor }}
           onClick={handleChannelClick}
           aria-label={`Go to ${video.channelTitle} channel`}
@@ -370,7 +371,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
         {/* Text */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5 flex items-start gap-1.5">
+          <h3 className="text-[13px] sm:text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-4 sm:leading-5 flex items-start gap-1.5">
             <span className="flex-1">{video.title}</span>
             {isRecentlyUploaded && (
               <span className="shrink-0 inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-0.5">
@@ -380,12 +381,12 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             )}
           </h3>
           <p
-            className="text-[12px] text-[#606060] dark:text-[#aaa] mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+            className="text-[11px] sm:text-[12px] text-[#606060] dark:text-[#aaa] mt-0.5 sm:mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
             onClick={handleChannelClick}
           >
             {video.channelTitle}
           </p>
-          <p className="text-[12px] text-[#606060] dark:text-[#aaa]">
+          <p className="text-[11px] sm:text-[12px] text-[#606060] dark:text-[#aaa]">
             {video.views} • {video.publishedAt}
           </p>
         </div>

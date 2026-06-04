@@ -282,7 +282,7 @@ export default function YouTubeHeader() {
     <>
       <header className="fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#0f0f0f] z-50 flex items-center justify-between px-4 border-b border-gray-100 dark:border-gray-800">
         {/* Left section */}
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <button
             onClick={toggleSidebar}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
@@ -294,9 +294,15 @@ export default function YouTubeHeader() {
             className="flex items-center gap-0.5 cursor-pointer shrink-0"
             onClick={handleLogoClick}
           >
-            {/* YouTube Logo - Official wordmark with PK country code */}
+            {/* YouTube Logo - Play button icon on mobile, full wordmark on desktop */}
             <div className="flex items-center">
-              <svg viewBox="0 0 90 20" className="h-5 w-auto cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleLogoClick}>
+              {/* Mobile: Just the play button icon */}
+              <svg viewBox="0 0 28.57 20" className="h-5 w-auto sm:hidden cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleLogoClick}>
+                <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"/>
+                <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
+              </svg>
+              {/* Desktop: Full wordmark */}
+              <svg viewBox="0 0 90 20" className="h-5 w-auto hidden sm:block cursor-pointer" preserveAspectRatio="xMidYMid meet" onClick={handleLogoClick}>
                 <g>
                   <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"/>
                   <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
@@ -311,7 +317,7 @@ export default function YouTubeHeader() {
                   <path d="M84.1498 13.7036C84.1498 14.5259 84.1786 15.1519 84.234 15.5798C84.2895 16.0078 84.3992 16.3145 84.5619 16.4987C84.7246 16.6829 84.9722 16.775 85.3066 16.775C85.7555 16.775 86.0662 16.5857 86.2386 16.2072C86.4111 15.8287 86.5069 15.1886 86.5272 14.2866L89.0745 14.4359C89.0872 14.5688 89.0935 14.7544 89.0935 14.9916C89.0935 16.2498 88.7579 17.2002 88.0866 17.8427C87.4153 18.4852 86.4783 18.8064 85.2759 18.8064C83.8032 18.8064 82.7611 18.3087 82.1497 17.3134C81.5383 16.318 80.8325 14.7628 80.8325 12.6461V11.1903C80.8325 9.05782 81.5406 7.4861 82.1597 6.48735C82.7787 5.4886 83.8381 4.98923 85.3382 4.98923C86.337 4.98923 87.1045 5.19742 87.6426 5.6138C88.1807 6.03019 88.5549 6.65328 88.7651 7.4826C88.9754 8.31192 89.0822 9.40752 89.0822 10.7694V12.741H84.1498V13.7036ZM84.2773 8.15677C84.1215 8.4032 84.0247 8.7859 83.9844 9.30453C83.944 9.82315 83.9242 10.5644 83.9242 11.5274V12.4592H86.4715V11.5274C86.4715 10.5758 86.4517 9.83449 86.4113 9.30846C86.371 8.78244 86.2741 8.39715 86.1184 8.15536C85.9626 7.91358 85.7181 7.79233 85.3838 7.79233C85.0495 7.79233 84.8009 7.91034 84.6382 8.14635L84.2773 8.15677Z" fill={isDark ? '#f1f1f1' : '#282828'}/>
                 </g>
               </svg>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-0.5 -mt-2.5 font-roboto">PK</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-0.5 -mt-2.5 font-roboto hidden sm:inline">PK</span>
             </div>
           </div>
         </div>
@@ -432,11 +438,11 @@ export default function YouTubeHeader() {
             <Search className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
 
-          {/* Create dropdown */}
+          {/* Create dropdown - show on mobile only if signed in */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="hidden sm:flex items-center justify-center p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" aria-label="Create">
-                <Video className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <button className={`${user ? 'flex' : 'hidden sm:flex'} items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors`} aria-label="Create">
+                <Video className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#282828] border-gray-200 dark:border-gray-700">
@@ -455,10 +461,10 @@ export default function YouTubeHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Notifications popover */}
+          {/* Notifications popover - always visible on signed in mobile */}
           <Popover>
             <PopoverTrigger asChild>
-              <button className="hidden sm:flex p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors relative" aria-label="Notifications">
+              <button className={`${user ? 'flex' : 'hidden sm:flex'} p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors relative`} aria-label="Notifications">
                 <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-medium rounded-full w-4 h-4 flex items-center justify-center">{unreadCount}</span>

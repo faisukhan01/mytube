@@ -266,18 +266,18 @@ export default function VideoGrid() {
   }
 
   return (
-    <div className="p-4 md:p-6 page-transition" key={selectedCategory}>
+    <div className="p-2 md:p-4 lg:p-6 page-transition" key={selectedCategory}>
       {/* Category heading + Sort dropdown */}
       <div className="flex items-center justify-between mb-4">
         {selectedCategory !== 'All' ? (
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white animate-fade-in">{selectedCategory}</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white animate-fade-in">{selectedCategory}</h2>
         ) : (
           <div />
         )}
         <div className="flex items-center gap-2">
           <ArrowUpDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[140px] h-8 text-[13px] bg-[#f2f2f2] dark:bg-[#272727] border-0 hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]">
+            <SelectTrigger className="w-[120px] sm:w-[140px] h-8 text-[13px] bg-[#f2f2f2] dark:bg-[#272727] border-0 hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -290,7 +290,7 @@ export default function VideoGrid() {
       </div>
 
       {/* Video grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8 lg:gap-y-10">
         {allVideos.map((video, index) => (
           <div key={`${video.id}-${index}`} className={`stagger-${Math.min((index % 8) + 1, 8)} animate-slide-up`}>
             <VideoCard video={video} layout="grid" />

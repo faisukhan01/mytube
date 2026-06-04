@@ -57,7 +57,7 @@ import {
 } from '@/components/ui/dialog';
 import PlaylistDialog from './playlist-dialog';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SidebarItem {
   icon: React.ReactNode;
@@ -130,6 +130,17 @@ export default function YouTubeSidebar() {
 
   // Feedback state
   const [feedbackText, setFeedbackText] = useState('');
+
+  // Close sidebar on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        useYouTubeStore.getState().toggleSidebar();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
   const handleItemClick = (item: SidebarItem) => {
     if (item.dialogId) {

@@ -986,3 +986,207 @@ Unresolved Issues / Next Phase Priorities:
 - Could add video upload simulation with drag-and-drop
 - Could add YouTube Stories feature
 - Could add community/posts tab on channel pages
+
+---
+Task ID: 4c
+Agent: Library Views, Footer & Shortcuts Agent
+Task: Improve Library Views, Footer, and Subscriptions
+
+Work Log:
+- Improved LikedView in library-views.tsx:
+  - Added header with Like icon in circular background, "Liked videos" title, and video count
+  - Changed from grid to list layout for better YouTube-like presentation
+  - Added "Sort by" dropdown (Most recent / Most liked) using shadcn Select component
+  - Added remove from liked (X) button that appears on hover over each video
+  - Added proper empty state with ThumbsUp icon, "No liked videos yet" title, description, and "Browse videos" button
+  - Fixed React Hook rules violation by moving useMemo and state computations before conditional auth return
+- Improved WatchLaterView in library-views.tsx:
+  - Added header with Clock icon in circular background, "Watch later" title, and video count
+  - Added "Play all" button at the top (dark button with Play icon)
+  - Added remove from Watch later (X) button that appears on hover
+  - Added proper empty state with Clock icon, "No videos yet" title, description, and "Browse videos" button
+- Improved SubscriptionsView in library-views.tsx:
+  - Added horizontal scrollable row of channel avatars at top with "All" chip
+  - Each channel avatar shows circular initial with color, channel name below
+  - Clicking a channel avatar filters to show only that channel's videos
+  - "All" chip (dark bg when active) shows videos from all subscriptions
+  - Added channel filter indicator with X button to clear
+  - Videos from subscribed channels displayed in grid layout
+  - Simulated subscriptions from 10 popular channels (MrBeast, MKBHD, Veritasium, Fireship, Kurzgesagt, etc.)
+  - Added proper empty states for: no subscriptions, no videos from filtered channel, auth required
+- Added shared EmptyState component with icon, title, description, and "Browse videos" button
+- Added shared AuthGate component for sign-in prompts
+- Improved Footer in page.tsx:
+  - Two rows of YouTube-style links (About, Press, Copyright, Contact us, Creators, Advertise, Developers / Terms, Privacy, Policy & Safety, How YouTube works, Test new features)
+  - Added responsive layout: centered on mobile, left-aligned on desktop (justify-center md:justify-start)
+  - Added YouTube play button SVG icon before "© 2025 Google LLC"
+  - Added "Location: Pakistan" link at the bottom
+  - Footer links use proper hover styling with footer-link class
+- Enhanced Keyboard Shortcuts Dialog:
+  - Added comprehensive shortcuts: Space/K (Play/Pause), J (Rewind 10s), L (Forward 10s), Arrow Left (Rewind 5s), Arrow Right (Forward 5s), Arrow Up (Volume up), Arrow Down (Volume down), M (Mute/Unmute), F (Fullscreen), C (Toggle captions)
+  - Added Navigation shortcuts: Shift+N (Next video), Shift+P (Previous video), / (Focus search), Esc (Close dialogs)
+  - Added General shortcuts: ? (Show help), Shift+? (Alternate), Arrow Up/Down (Navigate Shorts)
+  - Grouped shortcuts by category (Playback, Navigation, General) with section headers
+  - Styled keyboard keys with bg-gray-100 dark:bg-[#272727] rounded font-mono text-sm badges
+  - Keys joined with "+" separator instead of "/"
+  - Added "Access anywhere" hint at bottom: "Press Shift+/ (or ?) to open this dialog"
+  - Hover highlight on shortcut rows (hover:bg-gray-50 dark:hover:bg-[#333])
+- Fixed pre-existing lint error in video-player-view.tsx: Moved useCallback(setBaseCommentReply) before conditional return to fix React Hook rules violation
+- Fixed pre-existing lint error in HistoryView: Moved useMemo(groupedVideos) before conditional auth return
+- All lint checks pass with zero errors
+- App compiles and runs successfully
+
+Stage Summary:
+- Liked videos view has header with count, list layout, sort dropdown, and remove on hover
+- Watch later view has header with count, Play all button, and remove on hover
+- Subscriptions view has channel avatar row with filtering, video grid, and proper empty states
+- All library views have proper empty states with icon, title, description, and Browse videos button
+- Footer is YouTube-like with two rows of links, play button icon, Location: Pakistan, and responsive layout
+- Keyboard shortcuts dialog has comprehensive shortcuts grouped by category with styled key badges
+- Zero lint errors, all components compile successfully
+
+---
+Task ID: 4b
+Agent: Queue, History & Mobile Agent
+Task: Add Video Queue, Improved History, and Mobile Responsive Layout
+
+Work Log:
+- Updated youtube-store.ts with Video Queue feature:
+  - Added videoQueue (Video[]) state, showQueue (boolean) state, historyPaused (boolean) state
+  - Added addToQueue action (adds video to queue, prevents duplicates)
+  - Added removeFromQueue action (removes video by ID)
+  - Added clearQueue action (empties the queue)
+  - Added playNext action (plays first video in queue, shifts queue, adds to history)
+  - Added toggleQueue action (toggles queue panel visibility)
+  - Added removeFromHistory action (removes video from watch history)
+  - Added clearHistory action (clears all watch history)
+  - Added toggleHistoryPaused action (pauses/resumes history tracking)
+- Updated video-player-view.tsx with Queue Panel:
+  - Added collapsible queue panel on right sidebar above related videos
+  - Queue header with ListMusic icon, video count, Clear and Minimize buttons
+  - "Now playing" section showing current video with animated equalizer bars
+  - "Up next" section listing queued videos with thumbnail, title, channel, duration
+  - Hover reveals Play button on thumbnail and Remove (X) button
+  - Minimized queue shows as expandable button with video count
+  - Empty queue shows helpful message
+  - Added ListMusic, X, Trash2, Play, Minimize2 icons from lucide-react
+- Updated video-card.tsx to wire Add to Queue button:
+  - handleAddToQueue now calls addToQueue(video) store action instead of just showing toast
+  - Queue persists in store so videos can be played in order
+- Updated library-views.tsx with improved History View:
+  - Added timeline date grouping: Today, Yesterday, This week, This month, Older
+  - Each group has a heading with date label
+  - Videos displayed in list layout with smaller thumbnails on mobile
+  - Added search within history (rounded-full input with search icon)
+  - Added "Pause watch history" toggle button (changes style when paused)
+  - Added "Clear all watch history" button with confirmation Dialog
+  - Added "Remove from history" X button on each video (visible on hover)
+  - Added red progress bar at bottom of each video thumbnail showing watch percentage
+  - Added "X% watched" text indicator below each video
+  - Added yellow warning banner when history is paused
+  - Added Search, Pause, Trash2 icons and Dialog, toast imports
+- Updated header.tsx for mobile responsive layout:
+  - Mobile (<640px): Shows only YouTube play button icon (not full wordmark)
+  - Desktop (640px+): Shows full YouTube SVG wordmark with PK superscript
+  - Mobile: Search bar hidden (replaced by search icon that opens full-screen overlay)
+  - Create button: Shows on mobile only when user is signed in
+  - Notifications bell: Shows on mobile only when user is signed in
+  - Adjusted gap and icon sizes for mobile
+- Updated video-grid.tsx for mobile responsive layout:
+  - Reduced padding: p-2 on mobile, md:p-4 on tablet, lg:p-6 on desktop
+  - Reduced gap-y: gap-y-6 on mobile, sm:gap-y-8, lg:gap-y-10
+  - Reduced gap-x: gap-x-3 on mobile, sm:gap-x-4
+  - Category heading: text-base on mobile, sm:text-lg on desktop
+  - Sort dropdown: w-[120px] on mobile, sm:w-[140px] on desktop
+- Updated video-card.tsx for mobile responsive layout:
+  - Avatar: w-8 h-8 on mobile, sm:w-9 sm:h-9 on desktop
+  - Title font: text-[13px] on mobile, sm:text-sm on desktop
+  - Channel name font: text-[11px] on mobile, sm:text-[12px] on desktop
+  - Views font: text-[11px] on mobile, sm:text-[12px] on desktop
+  - Gap: gap-2 on mobile, sm:gap-3 on desktop
+  - Margin top: mt-2 on mobile, sm:mt-3 on desktop
+- Updated sidebar.tsx for mobile responsive layout:
+  - Added Escape key handler to close sidebar overlay on mobile
+  - useEffect listener for keydown event that closes sidebar when Escape pressed
+  - Overlay already closes on click outside (verified working)
+- All lint checks pass with only 1 pre-existing warning (channel-view.tsx)
+- Dev server compiles and runs successfully
+
+Stage Summary:
+- Video Queue feature fully implemented with collapsible panel, now playing/up next sections, and play next functionality
+- History View significantly improved with timeline grouping, search, pause/clear, remove per-video, and watch progress indicators
+- Mobile responsive layout improved across header, video grid, video card, and sidebar
+- All new features work with dark mode
+- Zero new lint errors introduced
+
+---
+Task ID: 4a
+Agent: Video Player & Channel View Improvement Agent
+Task: Improve Video Player View and Channel View styling and functionality
+
+Work Log:
+- Updated /src/components/youtube/video-player-view.tsx with major improvements:
+  - Added chapter markers parsing from description timestamps (e.g., "0:00 Intro", "3:33 Chorus")
+    - Horizontal scrollable row of clickable chapter markers below video title
+    - Each marker shows timestamp + chapter name, clicking seeks video to that time
+    - parseChapters() function supports M:SS and H:MM:SS timestamp formats
+  - Improved Like/Dislike button row:
+    - Changed like count from text-sm to text-[12px] font-medium (YouTube style, e.g., "122K")
+    - Changed divider to exact spec: h-6 w-[1px] bg-gray-300 dark:bg-gray-600 mx-2
+  - Changed description toggle from "...more" to "Show more" with ChevronDown/ChevronUp icons
+    - Added smooth expand/collapse with overflow-hidden and transition-all duration-300
+    - Background already bg-gray-100 dark:bg-[#272727] rounded-xl p-3
+  - Replaced BookmarkPlus with ListPlus icon for Save button (YouTube accurate)
+  - Improved Share dialog:
+    - Added Copy icon to copy button
+    - Replaced plain letter icons with proper SVG brand icons for WhatsApp, Twitter/X, Facebook
+    - Added Mail icon for Email share option
+    - Larger circular share buttons (w-12 h-12) with proper brand colors
+  - Improved Comments section:
+    - Replaced plain text "Top | Newest" sort with proper Select dropdown component (shadcn/ui)
+    - Added sort icon (SVG bars) next to dropdown trigger
+    - Added comment like toggle with fill animation (per-comment like state tracking)
+    - Added Reply functionality with inline reply input (user avatar + text input + Reply/Cancel buttons)
+    - Improved comment avatar colors with more variety based on author initials
+    - Comments now display with proper whitespace-pre-line for multi-line comments
+  - Removed unused imports (BookmarkPlus, MessageSquare)
+  - All lint checks pass
+
+- Updated /src/components/youtube/channel-view.tsx with major improvements:
+  - Added 7 tabs: HOME, VIDEOS, SHORTS, LIVE, PLAYLISTS, COMMUNITY, ABOUT (was 4: Videos, Shorts, Playlists, About)
+    - Each tab has an icon (Home, Play, Sparkles, Radio, ListVideo, MessageSquare, Info)
+  - Added HOME tab with:
+    - Featured video section with embedded YouTube iframe and description
+    - Recent uploads grid (6 videos) with "View all" link to Videos tab
+    - Shorts horizontal scroll section with "View all" link to Shorts tab
+  - Added LIVE tab with:
+    - Filters for live videos (duration === 'LIVE')
+    - Empty state with Radio icon when no live videos
+  - Added COMMUNITY tab with:
+    - Create post textarea with Post button and toast feedback
+    - 3 sample community posts with likes count, comments count, timestamps
+    - ThumbsUp and MessageSquare interaction buttons on each post
+  - Improved channel banner:
+    - Uses channel color for gradient (instead of hardcoded red/purple/blue)
+    - Style: `linear-gradient(135deg, ${channelColor}cc, ${channelColor}88, ${channelColor}44)`
+  - Improved Subscribe button:
+    - Added checkmark SVG icon when subscribed (instead of just text)
+    - Added notification bell dropdown when subscribed (All/Personalized/None options)
+  - Improved About tab:
+    - Added consistent total views (derived from channel name hash, not random)
+    - Added consistent join date (derived from channel name hash)
+    - Added consistent location (derived from channel name hash, 10 possible locations)
+    - Added MapPin icon with location to channel info header
+  - Added toast import from sonner for community post feedback
+  - All lint checks pass
+
+Stage Summary:
+- Video Player View significantly improved with chapter markers, better like/dislike layout, improved description toggle, proper share icons, Select dropdown for comment sorting, inline reply functionality, and comment like toggling
+- Channel View expanded from 4 to 7 tabs (added Home, Live, Community)
+- Home tab features embedded video, recent uploads grid, and shorts section
+- Community tab allows creating posts and shows sample community content
+- Channel banner now uses channel's color for gradient
+- Subscribe button has notification bell dropdown
+- About tab has consistent stats (total views, join date, location)
+- Zero lint errors, dev server compiles successfully
+

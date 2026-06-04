@@ -43,6 +43,9 @@ interface YouTubeState {
   selectedPlaylistId: string | null;
   showPlaylistDialog: boolean;
   watchProgress: Record<string, number>;
+  videoQueue: Video[];
+  showQueue: boolean;
+  historyPaused: boolean;
 
   // Actions
   setCurrentView: (view: ViewMode) => void;
@@ -76,6 +79,18 @@ interface YouTubeState {
   openPlaylist: (playlistId: string) => void;
   setShowPlaylistDialog: (show: boolean) => void;
   setWatchProgress: (videoId: string, progress: number) => void;
+
+  // Queue actions
+  addToQueue: (video: Video) => void;
+  removeFromQueue: (videoId: string) => void;
+  clearQueue: () => void;
+  playNext: () => void;
+  toggleQueue: () => void;
+
+  // History actions
+  removeFromHistory: (videoId: string) => void;
+  clearHistory: () => void;
+  toggleHistoryPaused: () => void;
 
   // Auth actions
   setUser: (user: UserData | null) => void;
@@ -127,6 +142,9 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   selectedPlaylistId: null,
   showPlaylistDialog: false,
   watchProgress: {},
+  videoQueue: [],
+  showQueue: false,
+  historyPaused: false,
 
   setCurrentView: (view) => {
     const state = get();
@@ -389,6 +407,46 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
       return { watchProgress: updated };
     });
   },
+
+  // Queue actions
+  addToQueue: (video) => set((s) => {
+    if (s.videoQueue.some((v) => v.id === video.id)) return s;
+    return { videoQueue: [...s.videoQueue, video] };
+  }),
+
+  removeFromQueue: (videoId) => set((s) => ({
+    videoQueue: s.videoQueue.filter((v) => v.id !== videoId),
+  })),
+
+  clearQueue: () => set({ videoQueue: [] }),
+
+  playNext: () => {
+    const state = get();
+    if (state.videoQueue.length > 0) {
+      const nextVideo = state.videoQueue[0];
+      set({
+        currentVideo: nextVideo,
+        videoQueue: state.videoQueue.slice(1),
+      });
+      get().addToHistory(nextVideo.id);
+      // Simulate watch progress
+      setTimeout(() => {
+        const progress = Math.floor(Math.random() * 61) + 20;
+        get().setWatchProgress(nextVideo.id, progress);
+      }, 3000);
+    }
+  },
+
+  toggleQueue: () => set((s) => ({ showQueue: !s.showQueue })),
+
+  // History actions
+  removeFromHistory: (videoId) => set((s) => ({
+    watchHistory: s.watchHistory.filter((id) => id !== videoId),
+  })),
+
+  clearHistory: () => set({ watchHistory: [] }),
+
+  toggleHistoryPaused: () => set((s) => ({ historyPaused: !s.historyPaused })),
 
   // Auth actions
   setUser: (user) => set({ user }),
