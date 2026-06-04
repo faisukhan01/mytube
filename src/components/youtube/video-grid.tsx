@@ -255,7 +255,13 @@ export default function VideoGrid() {
       <div className="page-transition">
         {selectedCategory !== 'All' && (
           <div className="p-4 md:p-6 pb-0">
-            <div className="h-6 w-32 bg-gray-200 dark:bg-[#272727] rounded animate-shimmer" />
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-32 bg-gray-200 dark:bg-[#272727] rounded animate-shimmer" />
+              <div className="relative w-5 h-5">
+                <div className="absolute inset-0 rounded-full border-2 border-gray-300 dark:border-gray-600" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-red-600 animate-spin" />
+              </div>
+            </div>
           </div>
         )}
         <div className="p-4 md:p-6">
@@ -301,8 +307,11 @@ export default function VideoGrid() {
       {/* Dynamic loading indicator (loading new category videos) */}
       {isLoadingDynamic && (
         <div className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative w-6 h-6">
+              <div className="absolute inset-0 rounded-full border-2 border-gray-300 dark:border-gray-600" />
+              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-red-600 animate-spin" />
+            </div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               Loading more {dynamicCategoryLabels[selectedCategory] || 'videos'}...
             </span>

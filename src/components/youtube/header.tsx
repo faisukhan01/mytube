@@ -132,9 +132,9 @@ export default function YouTubeHeader() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [themeRotating, setThemeRotating] = useState(false);
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const [prevUnreadCount, setPrevUnreadCount] = useState(unreadCount);
   const [badgeBouncing, setBadgeBouncing] = useState(false);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const prevUnreadCountRef = useRef(unreadCount);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const voiceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -156,13 +156,14 @@ export default function YouTubeHeader() {
 
   // Track notification count changes for badge bounce
   useEffect(() => {
-    if (unreadCount !== prevUnreadCount && prevUnreadCount !== undefined) {
+    if (unreadCount !== prevUnreadCountRef.current && prevUnreadCountRef.current !== undefined) {
       setBadgeBouncing(true);
       const timer = setTimeout(() => setBadgeBouncing(false), 400);
+      prevUnreadCountRef.current = unreadCount;
       return () => clearTimeout(timer);
     }
-    setPrevUnreadCount(unreadCount);
-  }, [unreadCount, prevUnreadCount]);
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount]);
 
   // Build search suggestions from video data
   const searchSuggestions = useMemo(() => {

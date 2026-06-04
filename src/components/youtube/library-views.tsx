@@ -524,25 +524,34 @@ export function WatchLaterView() {
    SUBSCRIPTIONS VIEW
    ═══════════════════════════════════════════ */
 export function SubscriptionsView() {
-  const { user, toggleAuthDialog, setCurrentView } = useYouTubeStore();
+  const { user, toggleAuthDialog, setCurrentView, openChannel } = useYouTubeStore();
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
 
   // Get unique channels from video data (simulating subscribed channels)
   const subscribedChannels = useMemo(() => {
-    const channelMap = new Map<string, { title: string; color: string; initial: string; avatar: string }>();
+    const channelMap = new Map<string, { title: string; color: string; initial: string; avatar: string; videoCount: number; hasLive: boolean }>();
     // Pick a diverse set of channels to simulate subscriptions
     const subscriptionChannels = [
       'MrBeast', 'Marques Brownlee', 'Veritasium', 'Fireship', 'Kurzgesagt',
       'Mark Wiens', 'The Dodo', 'Linus Tech Tips', 'Khan Academy', 'Gordon Ramsay',
+      'Rick Astley', 'Ed Sheeran', 'Queen Official', 'Dream', 'PewDiePie',
     ];
     homeVideos.forEach(v => {
-      if (subscriptionChannels.includes(v.channelTitle) && !channelMap.has(v.channelTitle)) {
-        channelMap.set(v.channelTitle, {
-          title: v.channelTitle,
-          color: v.channelColor,
-          initial: v.channelInitial,
-          avatar: v.channelAvatar,
-        });
+      if (subscriptionChannels.includes(v.channelTitle)) {
+        const existing = channelMap.get(v.channelTitle);
+        if (existing) {
+          existing.videoCount += 1;
+          if (v.duration === 'LIVE') existing.hasLive = true;
+        } else {
+          channelMap.set(v.channelTitle, {
+            title: v.channelTitle,
+            color: v.channelColor,
+            initial: v.channelInitial,
+            avatar: v.channelAvatar,
+            videoCount: 1,
+            hasLive: v.duration === 'LIVE',
+          });
+        }
       }
     });
     return Array.from(channelMap.values());
@@ -579,8 +588,8 @@ export function SubscriptionsView() {
       {subscribedChannels.length > 0 ? (
         <>
           {/* Channel avatars row - horizontal scrollable */}
-          <div className="mb-6 -mx-4 px-4 overflow-x-auto scrollbar-thin">
-            <div className="flex gap-4 pb-2 min-w-max">
+          <div className="mb-6 -mx-4 px-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex gap-3 pb-2 min-w-max">
               {/* "All" chip */}
               <button
                 onClick={() => setSelectedChannel(null)}
@@ -613,18 +622,25 @@ export function SubscriptionsView() {
                   onClick={() => setSelectedChannel(
                     selectedChannel === channel.title ? null : channel.title
                   )}
-                  className={`flex flex-col items-center gap-1.5 shrink-0 transition-all duration-200 ${
+                  onDoubleClick={() => openChannel(channel.title)}
+                  className={`flex flex-col items-center gap-1.5 shrink-0 transition-all duration-200 group ${
                     selectedChannel === channel.title
                       ? 'opacity-100'
                       : 'opacity-80 hover:opacity-100'
                   }`}
                 >
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all duration-200 ${
-                    selectedChannel === channel.title
-                      ? 'ring-2 ring-gray-900 dark:ring-white scale-105'
-                      : 'hover:scale-105'
-                  }`} style={{ backgroundColor: channel.color }}>
-                    {channel.initial}
+                  <div className="relative">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all duration-200 ${
+                      selectedChannel === channel.title
+                        ? 'ring-2 ring-gray-900 dark:ring-white scale-105'
+                        : 'group-hover:scale-105'
+                    }`} style={{ backgroundColor: channel.color }}>
+                      {channel.initial}
+                    </div>
+                    {/* Live indicator dot */}
+                    {channel.hasLive && (
+                      <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-red-600 rounded-full border-2 border-white dark:border-[#0f0f0f] animate-pulse" />
+                    )}
                   </div>
                   <span className={`text-[11px] max-w-[64px] truncate ${
                     selectedChannel === channel.title

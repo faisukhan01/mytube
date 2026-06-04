@@ -200,6 +200,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     }
     // Update URL hash based on view
     if (view === 'home') updateHash('#/');
+    else if (view === 'shorts') updateHash('#/shorts');
     else if (view === 'trending') updateHash('#/trending');
     else if (view === 'history') updateHash('#/history');
     else if (view === 'liked') updateHash('#/liked');

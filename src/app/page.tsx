@@ -21,6 +21,8 @@ import {
   SubscriptionsView,
 } from '@/components/youtube/library-views';
 import KeyboardShortcutsDialog from '@/components/youtube/keyboard-shortcuts-dialog';
+import MobileBottomNav from '@/components/youtube/mobile-bottom-nav';
+import { Globe } from 'lucide-react';
 
 export default function Home() {
   const {
@@ -30,11 +32,12 @@ export default function Home() {
     currentVideo,
     searchQuery,
     checkSession,
-    set,
   } = useYouTubeStore();
 
   const showCategoryChips = currentView === 'home';
   const showSidebar = currentView !== 'player' && currentView !== 'shorts';
+  const showMobileBottomNav = currentView !== 'player' && currentView !== 'shorts';
+  const showFooter = currentView !== 'shorts' && currentView !== 'player' && currentView !== 'channel';
 
   // Check session on mount
   useEffect(() => {
@@ -45,74 +48,66 @@ export default function Home() {
   const applyHashView = useCallback((isPopstate = false) => {
     const hashInfo = parseHash();
     void isPopstate; // Used to indicate browser navigation vs initial load
+    const store = useYouTubeStore.getState();
 
     if (hashInfo.view === 'home') {
-      set({
-        currentView: 'home',
-        currentVideo: null,
-        searchQuery: '',
-        searchResults: [],
-      });
+      store.setCurrentView('home');
     } else if (hashInfo.view === 'player' && hashInfo.videoId) {
       const video = getVideoById(hashInfo.videoId);
       if (video) {
-        set({
-          currentView: 'player',
-          currentVideo: video,
-          miniPlayerVideo: null,
-        });
+        store.openVideo(video);
       }
     } else if (hashInfo.view === 'shorts') {
       if (hashInfo.videoId) {
         const index = shortsVideos.findIndex((v) => v.id === hashInfo.videoId);
-        set({
-          currentView: 'shorts',
-          currentShortIndex: index >= 0 ? index : 0,
-        });
+        store.openShort(index >= 0 ? index : 0);
       } else {
-        set({
-          currentView: 'shorts',
-          currentShortIndex: hashInfo.shortIndex || 0,
-        });
+        store.setCurrentView('shorts');
       }
     } else if (hashInfo.view === 'search' && hashInfo.query) {
-      set({
-        currentView: 'search',
-        searchQuery: hashInfo.query,
-        isSearching: true,
-      });
+      store.search(hashInfo.query);
     } else if (hashInfo.view === 'trending') {
-      set({ currentView: 'trending' });
+      store.setCurrentView('trending');
     } else if (hashInfo.view === 'channel' && hashInfo.channel) {
-      set({ currentView: 'channel', selectedChannel: hashInfo.channel });
+      store.openChannel(hashInfo.channel);
     } else if (hashInfo.view === 'history') {
-      set({ currentView: 'history' });
+      store.setCurrentView('history');
     } else if (hashInfo.view === 'liked') {
-      set({ currentView: 'liked' });
+      store.setCurrentView('liked');
     } else if (hashInfo.view === 'watchlater') {
-      set({ currentView: 'watchlater' });
+      store.setCurrentView('watchlater');
     } else if (hashInfo.view === 'subscriptions') {
-      set({ currentView: 'subscriptions' });
+      store.setCurrentView('subscriptions');
     } else if (hashInfo.view === 'playlist' && hashInfo.playlistId) {
-      set({ currentView: 'playlist', selectedPlaylistId: hashInfo.playlistId });
+      store.openPlaylist(hashInfo.playlistId);
     }
-  }, [set]);
+  }, []);
 
   // Parse initial hash on mount
   useEffect(() => {
     const hash = window.location.hash;
     if (hash && hash !== '#' && hash !== '#/') {
-      applyHashView();
+      // Use requestAnimationFrame to ensure React has finished initial render
+      requestAnimationFrame(() => {
+        applyHashView();
+      });
     }
   }, [applyHashView]);
 
-  // Listen for popstate events (browser back/forward)
+  // Listen for popstate events (browser back/forward) and hashchange
   useEffect(() => {
     const handlePopState = () => {
       applyHashView(true);
     };
+    const handleHashChange = () => {
+      applyHashView(true);
+    };
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, [applyHashView]);
 
   // Update page title based on current view
@@ -183,7 +178,7 @@ export default function Home() {
 
       {/* Main content */}
       <main
-        className={`flex-1 pt-14 sidebar-transition ${getMainClasses()}`}
+        className={`flex-1 pt-14 sidebar-transition ${getMainClasses()} ${showMobileBottomNav ? 'pb-14 md:pb-0' : ''}`}
       >
         <div key={currentView} className="page-transition">
           {renderContent()}
@@ -196,47 +191,57 @@ export default function Home() {
       {/* Keyboard Shortcuts Dialog */}
       <KeyboardShortcutsDialog />
 
-      {/* Footer - hidden in shorts and player view */}
-      {currentView !== 'shorts' && currentView !== 'player' && (
+      {/* Footer - hidden in shorts, player, and channel views */}
+      {showFooter && (
       <footer
-        className={`border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-[#0f0f0f] py-4 px-4 md:px-6 mt-auto sidebar-transition ${getMainClasses()}`}
+        className={`border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0f0f0f] py-3 px-4 md:px-6 mt-auto sidebar-transition ${getMainClasses()} hidden md:block`}
       >
         <div className="max-w-[2000px] mx-auto">
-          {/* Section 1: About, Press, Copyright, Contact us, Creators, Advertise, Developers */}
-          <div className="flex flex-wrap gap-x-3 md:gap-x-4 gap-y-1 md:gap-y-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-2 md:mb-3 justify-center md:justify-start">
-            <a href="#" className="footer-link">About</a>
-            <a href="#" className="footer-link">Press</a>
-            <a href="#" className="footer-link">Copyright</a>
-            <a href="#" className="footer-link">Contact us</a>
-            <a href="#" className="footer-link">Creators</a>
-            <a href="#" className="footer-link">Advertise</a>
-            <a href="#" className="footer-link">Developers</a>
+          {/* Section 1 */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-gray-500 dark:text-gray-400 mb-2 justify-start">
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">About</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Press</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Copyright</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Contact us</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Creators</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Advertise</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Developers</a>
           </div>
-          {/* Section 2: Terms, Privacy, Policy & Safety, How YouTube works, Test new features */}
-          <div className="flex flex-wrap gap-x-3 md:gap-x-4 gap-y-1 md:gap-y-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-3 md:mb-4 justify-center md:justify-start">
-            <a href="#" className="footer-link">Terms</a>
-            <a href="#" className="footer-link">Privacy</a>
-            <a href="#" className="footer-link">Policy & Safety</a>
-            <a href="#" className="footer-link">How YouTube works</a>
-            <a href="#" className="footer-link">Test new features</a>
+          {/* Section 2 */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-gray-500 dark:text-gray-400 mb-2 justify-start">
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Terms</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Privacy</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Policy & Safety</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">How YouTube works</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Test new features</a>
           </div>
-          {/* Copyright line */}
-          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 justify-center md:justify-start">
-            <div className="w-5 h-3.5 flex items-center">
-              <svg viewBox="0 0 28.571 20" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-                <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 0 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"/>
-                <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
-              </svg>
+          {/* Section 3: Restricted Mode, etc */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-gray-500 dark:text-gray-400 mb-3 justify-start">
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Restricted Mode: Off</a>
+          </div>
+          {/* Copyright + Location */}
+          <div className="flex items-center gap-3 text-[12px] text-gray-400 dark:text-gray-500 justify-start">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-3.5 flex items-center">
+                <svg viewBox="0 0 28.571 20" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                  <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 0 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"/>
+                  <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
+                </svg>
+              </div>
+              <span>© 2025 Google LLC</span>
             </div>
-            <span>© 2025 Google LLC</span>
-          </div>
-          {/* Location */}
-          <div className="mt-1 text-xs text-gray-400 dark:text-gray-500 flex justify-center md:justify-start">
-            <a href="#" className="footer-link">Location: Pakistan</a>
+            <span className="text-gray-300 dark:text-gray-700">|</span>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              Pakistan
+            </a>
           </div>
         </div>
       </footer>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      {showMobileBottomNav && <MobileBottomNav />}
     </div>
   );
 }

@@ -211,6 +211,13 @@ export default function SearchResults() {
               <SearchResultSkeleton />
             </div>
           ))}
+          <div className="flex items-center justify-center py-4 gap-3">
+            <div className="relative w-5 h-5">
+              <div className="absolute inset-0 rounded-full border-2 border-gray-300 dark:border-gray-600" />
+              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-red-600 animate-spin" />
+            </div>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Searching...</span>
+          </div>
         </div>
       )}
 

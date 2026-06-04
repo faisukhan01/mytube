@@ -4,6 +4,8 @@ import { useYouTubeStore } from '@/store/youtube-store';
 import { getCommentsForVideo, getRelatedVideos, type Comment } from '@/lib/youtube-data';
 import VideoCard from './video-card';
 import PlaylistDialog from './playlist-dialog';
+import LiveChat from './live-chat';
+import TranscriptPanel from './transcript-panel';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -28,6 +30,9 @@ import {
   X,
   Trash2,
   Play,
+  Scissors,
+  MessageSquare,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -195,6 +200,11 @@ export default function VideoPlayerView() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [isQueueExpanded, setIsQueueExpanded] = useState(true);
+  const [showChat, setShowChat] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [showClipDialog, setShowClipDialog] = useState(false);
+  const [clipStart, setClipStart] = useState(0);
+  const [clipEnd, setClipEnd] = useState(15);
   const autoplayCancelledRef = useRef(false);
   const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -472,11 +482,23 @@ export default function VideoPlayerView() {
         {/* Video player */}
         <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
           {isVideoLoading && (
-            <div className="absolute inset-0 bg-gray-900 z-10 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-gray-800 animate-pulse flex items-center justify-center">
-                <svg className="w-8 h-8 text-white/60" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 z-10 flex items-center justify-center">
+              {/* YouTube-style loading animation */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-14 h-10 relative">
+                  {/* Gray rectangle like YouTube player */}
+                  <div className="absolute inset-0 bg-gray-700/60 rounded-md animate-pulse" />
+                  {/* Play button in center */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white/70" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="relative w-8 h-8">
+                  <div className="absolute inset-0 rounded-full border-2 border-gray-600" />
+                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-red-600 animate-spin" />
+                </div>
               </div>
             </div>
           )}
@@ -595,6 +617,15 @@ export default function VideoPlayerView() {
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Share</span>
             </button>
 
+            {/* Clip button */}
+            <button
+              onClick={() => setShowClipDialog(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-full transition-colors"
+            >
+              <Scissors className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Clip</span>
+            </button>
+
             {/* Download button */}
             <button
               onClick={handleDownload}
@@ -688,8 +719,8 @@ export default function VideoPlayerView() {
                   <Shield className="w-4 h-4 mr-2" />
                   Report
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => toast.success('Transcript opening...')}>
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                <DropdownMenuItem onClick={() => setShowTranscript(true)}>
+                  <FileText className="w-4 h-4 mr-2" />
                   Show transcript
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -697,72 +728,94 @@ export default function VideoPlayerView() {
           </div>
         </div>
 
-        {/* Description - scrollable on mobile */}
-        <div className={`mt-4 bg-gray-100 dark:bg-[#272727] rounded-xl p-3 shadow-sm border transition-all duration-300 ${showFullDescription ? 'shadow-md border-gray-200 dark:border-gray-600' : 'border-transparent'} ${showFullDescription ? 'max-h-[400px] sm:max-h-[600px] overflow-y-auto' : ''}`}>
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
-            <span>{currentVideo.views}</span>
-            <span>{currentVideo.publishedAt}</span>
-          </div>
-          <div className={`mt-2 text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line overflow-hidden transition-all duration-300 ease-in-out ${!showFullDescription ? 'max-h-[60px]' : 'max-h-[2000px]'}`}>
-            {formatDescriptionText(currentVideo.description)}
-            {showFullDescription && (
-              <>
-                {'\n\n'}
-                {currentVideo.channelTitle}
-                {'\n'}
-                {currentVideo.views} • {currentVideo.publishedAt}
-                {'\n\n'}
-                <a href="#" onClick={(e) => e.preventDefault()} className="text-blue-600 dark:text-blue-400 hover:underline">#{currentVideo.category.toLowerCase().replace(/\s+/g, '')}</a>
-                {' '}
-                <a href="#" onClick={(e) => e.preventDefault()} className="text-blue-600 dark:text-blue-400 hover:underline">#{currentVideo.channelTitle.toLowerCase().replace(/\s+/g, '')}</a>
-              </>
-            )}
-          </div>
-          <button
-            onClick={() => setShowFullDescription(!showFullDescription)}
-            className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-2 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            {showFullDescription ? (
-              <>
-                Show less
-                <ChevronUp className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                Show more
-                <ChevronDown className="w-4 h-4" />
-              </>
-            )}
-          </button>
+        {/* Description - YouTube-style collapsed/expanded */}
+        <div className="mt-4">
+          {!showFullDescription ? (
+            /* Collapsed state - single line preview like real YouTube */
+            <button
+              onClick={() => setShowFullDescription(true)}
+              className="w-full text-left bg-gray-100 dark:bg-[#272727] rounded-xl p-3 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] transition-colors"
+            >
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                <span>{currentVideo.views}</span>
+                <span className="text-gray-400">·</span>
+                <span>{currentVideo.publishedAt}</span>
+                <span className="text-gray-400">·</span>
+                <span className="text-blue-600 dark:text-blue-400">#{currentVideo.category.toLowerCase().replace(/\s+/g, '')}</span>
+                <span className="text-blue-600 dark:text-blue-400">#{currentVideo.channelTitle.toLowerCase().replace(/\s+/g, '')}</span>
+              </div>
+              <div className="mt-1.5 text-sm text-gray-800 dark:text-gray-300 line-clamp-1">
+                {currentVideo.description.split('\n')[0]}
+                <span className="text-gray-600 dark:text-gray-400 font-medium ml-1">...more</span>
+              </div>
+            </button>
+          ) : (
+            /* Expanded state - full description like real YouTube */
+            <div className="bg-gray-100 dark:bg-[#272727] rounded-xl p-3">
+              {/* Views and date */}
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white mb-3">
+                <span>{currentVideo.views}</span>
+                <span className="text-gray-400">·</span>
+                <span>{currentVideo.publishedAt}</span>
+              </div>
 
-          {/* Video metadata in expanded description */}
-          {showFullDescription && (
-            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Tag className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
-                <span className="text-gray-600 dark:text-gray-400">Category</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
-                  {currentVideo.category}
-                </span>
+              {/* Full description text */}
+              <div className="text-sm text-gray-800 dark:text-gray-300 whitespace-pre-line">
+                {formatDescriptionText(currentVideo.description)}
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Shield className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
-                <span className="text-gray-600 dark:text-gray-400">License</span>
-                <span className="text-gray-800 dark:text-gray-200">Standard YouTube License</span>
-              </div>
-              {currentVideo.channelTitle && (
-                <div className="flex items-center gap-2 text-sm">
-                  <ExternalLink className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
-                  <span className="text-gray-600 dark:text-gray-400">Source</span>
-                  <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {currentVideo.channelTitle} (YouTube)
-                  </a>
+
+              {/* Music info section - shown for Music category */}
+              {currentVideo.category === 'Music' && (
+                <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex items-start gap-3 bg-gray-50 dark:bg-[#1a1a1a] rounded-lg p-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-600 rounded-md flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">Music</div>
+                      <div className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">
+                        {currentVideo.channelTitle} - {currentVideo.title.split(' - ')[0]?.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim() || currentVideo.title.substring(0, 40)}
+                      </div>
+                      <a href="#" onClick={(e) => e.preventDefault()} className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block">
+                        Learn more about the track
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* Hashtags */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href="#" onClick={(e) => e.preventDefault()} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">#{currentVideo.category.toLowerCase().replace(/\s+/g, '')}</a>
+                <a href="#" onClick={(e) => e.preventDefault()} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">#{currentVideo.channelTitle.toLowerCase().replace(/\s+/g, '')}</a>
+              </div>
+
+              {/* Metadata section */}
+              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Tag className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400">Category</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
+                    {currentVideo.category}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Shield className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400">License</span>
+                  <span className="text-gray-800 dark:text-gray-200">Standard YouTube License</span>
+                </div>
+              </div>
+
+              {/* Show less button */}
+              <button
+                onClick={() => setShowFullDescription(false)}
+                className="flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-gray-300 mt-3 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Show less
+                <ChevronUp className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
@@ -992,13 +1045,39 @@ export default function VideoPlayerView() {
         {/* Up next / Autoplay toggle */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-900 dark:text-white">Up next</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-600 dark:text-gray-400">Autoplay</span>
-            <Switch
-              checked={autoplay}
-              onCheckedChange={setAutoplay}
-              className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-600"
-            />
+          <div className="flex items-center gap-3">
+            {/* Chat toggle */}
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                showChat
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#272727]'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Chat
+            </button>
+            {/* Transcript toggle */}
+            <button
+              onClick={() => setShowTranscript(!showTranscript)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                showTranscript
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#272727]'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Transcript
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600 dark:text-gray-400">Autoplay</span>
+              <Switch
+                checked={autoplay}
+                onCheckedChange={setAutoplay}
+                className="data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-gray-300 dark:data-[state=unchecked]:bg-gray-600"
+              />
+            </div>
           </div>
         </div>
 
@@ -1096,6 +1175,24 @@ export default function VideoPlayerView() {
           </div>
         )}
 
+        {/* Live Chat Panel */}
+        {showChat && (
+          <div className="mb-3">
+            <LiveChat />
+          </div>
+        )}
+
+        {/* Transcript Panel */}
+        {showTranscript && (
+          <div className="mb-3">
+            <TranscriptPanel
+              videoId={currentVideo.id}
+              onSeek={handleChapterClick}
+              onClose={() => setShowTranscript(false)}
+            />
+          </div>
+        )}
+
         {/* Chips for related */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {['All', 'Related', 'Recently uploaded', 'Watched'].map((chip) => (
@@ -1132,6 +1229,91 @@ export default function VideoPlayerView() {
         onOpenChange={setShowPlaylistDialog}
         videoIdToSave={currentVideo?.id || null}
       />
+
+      {/* Clip Dialog */}
+      <Dialog open={showClipDialog} onOpenChange={setShowClipDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Clip</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Clip preview info */}
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{currentVideo.title}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{currentVideo.channelTitle}</p>
+            </div>
+
+            {/* Range selector */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Clip length</span>
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  {formatSeconds(clipStart)} - {formatSeconds(clipEnd)} ({clipEnd - clipStart}s)
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-16">Start</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(0, clipEnd - 15)}
+                    value={clipStart}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      setClipStart(val);
+                      if (clipEnd - val < 15) setClipEnd(val + 15);
+                      if (clipEnd - val > 60) setClipEnd(val + 60);
+                    }}
+                    className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <span className="text-xs text-gray-600 dark:text-gray-400 w-10 text-right">{formatSeconds(clipStart)}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 w-16">End</span>
+                  <input
+                    type="range"
+                    min={clipStart + 15}
+                    max={clipStart + 60}
+                    value={clipEnd}
+                    onChange={(e) => setClipEnd(parseInt(e.target.value))}
+                    className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <span className="text-xs text-gray-600 dark:text-gray-400 w-10 text-right">{formatSeconds(clipEnd)}</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Clip duration: 15-60 seconds</p>
+            </div>
+
+            {/* Clip title */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-1">Clip title</label>
+              <input
+                type="text"
+                defaultValue={`Clip: ${currentVideo.title.substring(0, 50)}...`}
+                className="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 dark:text-white transition-shadow"
+                maxLength={100}
+              />
+            </div>
+
+            {/* Share button */}
+            <Button
+              onClick={() => {
+                const clipUrl = `https://www.youtube.com/clip/${currentVideo.id}?start=${clipStart}&end=${clipEnd}`;
+                navigator.clipboard.writeText(clipUrl).then(() => {
+                  toast.success('Clip link copied to clipboard!');
+                }).catch(() => {
+                  toast.success(`Clip created: ${formatSeconds(clipStart)} - ${formatSeconds(clipEnd)}`);
+                });
+                setShowClipDialog(false);
+              }}
+              className="w-full rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Share clip
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Share Dialog */}
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
