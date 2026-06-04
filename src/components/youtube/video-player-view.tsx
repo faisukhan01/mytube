@@ -183,7 +183,7 @@ export default function VideoPlayerView() {
         </div>
 
         {/* Video title */}
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mt-3 leading-7">
+        <h1 className="text-[20px] font-semibold text-gray-900 dark:text-white mt-3 leading-7">
           {currentVideo.title}
         </h1>
 
@@ -202,7 +202,7 @@ export default function VideoPlayerView() {
             <div>
               <div className="flex items-center gap-1">
                 <span
-                  className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
+                  className="text-[14px] font-medium text-gray-900 dark:text-white cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
                   onClick={handleChannelClick}
                 >
                   {currentVideo.channelTitle}
@@ -220,7 +220,7 @@ export default function VideoPlayerView() {
                 className={`rounded-full text-sm font-medium px-4 h-9 transition-colors ${
                   isSubscribed
                     ? 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
-                    : 'bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-black'
+                    : 'bg-[#ff0000] hover:bg-[#cc0000] text-white'
                 }`}
               >
                 {isSubscribed ? (

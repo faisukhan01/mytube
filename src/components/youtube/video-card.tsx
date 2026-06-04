@@ -119,7 +119,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   if (layout === 'list') {
     return (
       <div
-        className="flex gap-4 cursor-pointer group py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-[#272727] transition-colors px-2"
+        className="flex gap-4 cursor-pointer group py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors px-2"
         onClick={() => openVideo(video)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -137,7 +137,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           ) : (
             <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
           )}
-          <span className={`absolute bottom-1 right-1 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded transition-all duration-200 ${
+          <span className={`absolute bottom-1 right-1 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
             isHovered ? 'bg-black scale-105' : ''
           }`}>
             {video.duration}
@@ -160,15 +160,27 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-5">
             {video.title}
           </h3>
-          <p
-            className="text-xs text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
-            onClick={handleChannelClick}
-          >
-            {video.channelTitle}
-          </p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            {video.views} • {video.publishedAt}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <button
+              className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-[11px] transition-transform duration-200 hover:scale-110"
+              style={{ backgroundColor: video.channelColor }}
+              onClick={handleChannelClick}
+              aria-label={`Go to ${video.channelTitle} channel`}
+            >
+              {video.channelInitial}
+            </button>
+            <div>
+              <p
+                className="text-[12px] text-[#606060] dark:text-[#aaa] hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+                onClick={handleChannelClick}
+              >
+                {video.channelTitle}
+              </p>
+              <p className="text-[12px] text-[#606060] dark:text-[#aaa]">
+                {video.views} • {video.publishedAt}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Menu */}
@@ -221,7 +233,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
         )}
         {/* Animated duration badge */}
-        <span className={`absolute bottom-1.5 right-1.5 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded transition-all duration-200 ${
+        <span className={`absolute bottom-1.5 right-1.5 bg-black/80 text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
           isHovered ? 'bg-black scale-110 shadow-lg' : ''
         }`}>
           {video.duration}
@@ -286,12 +298,12 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             {video.title}
           </h3>
           <p
-            className="text-xs text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
+            className="text-[12px] text-[#606060] dark:text-[#aaa] mt-1 hover:text-gray-900 dark:hover:text-gray-200 cursor-pointer transition-colors"
             onClick={handleChannelClick}
           >
             {video.channelTitle}
           </p>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-[12px] text-[#606060] dark:text-[#aaa]">
             {video.views} • {video.publishedAt}
           </p>
         </div>

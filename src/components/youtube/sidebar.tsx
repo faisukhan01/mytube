@@ -76,7 +76,6 @@ const mainItems: SidebarItem[] = [
 
 const youItems: SidebarItem[] = [
   { icon: <History className="w-5 h-5" />, label: 'History', view: 'history' },
-  { icon: <PlaySquare className="w-5 h-5" />, label: 'Your videos', view: 'home' },
   { icon: <Clock className="w-5 h-5" />, label: 'Watch later', view: 'watchlater' },
   { icon: <Library className="w-5 h-5" />, label: 'Playlists', dialogId: 'playlists' },
   { icon: <ThumbsUp className="w-5 h-5" />, label: 'Liked videos', view: 'liked' },
@@ -206,86 +205,86 @@ export default function YouTubeSidebar() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:hidden'
         }`}
       >
-        <div className="py-3 px-3">
+        <div className="py-2 px-2">
           {/* Main items */}
           {mainItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
+              className={`flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
                 currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
               }`}
             >
               <span className={currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}>
                 {item.icon}
               </span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
+              <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700" />
 
           {/* You section */}
-          <div className="flex items-center gap-1 px-3 mb-1">
-            <span className="text-base text-gray-800 dark:text-gray-200 font-medium">You</span>
+          <div className="flex items-center gap-1 px-3 mb-0.5">
+            <span className="text-[13px] text-gray-800 dark:text-gray-200 font-medium">You</span>
             <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
           {youItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className={`flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
+              className={`flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors ${
                 currentView === item.view ? 'bg-gray-100 dark:bg-[#272727] font-medium' : ''
               }`}
             >
               <span className={currentView === item.view ? 'text-black dark:text-white' : 'text-gray-700 dark:text-gray-400'}>
                 {item.icon}
               </span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
+              <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700" />
 
           {/* Explore section */}
-          <h3 className="px-3 mb-1 text-base text-gray-800 dark:text-gray-200 font-medium">Explore</h3>
+          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium">Explore</h3>
           {exploreItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
+              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
             >
               <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
+              <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700" />
 
           {/* More from YouTube */}
-          <h3 className="px-3 mb-1 text-base text-gray-800 dark:text-gray-200 font-medium">More from YouTube</h3>
+          <h3 className="px-3 mb-0.5 text-[13px] text-gray-800 dark:text-gray-200 font-medium">More from YouTube</h3>
           {moreItems.map((item) => (
             <button
               key={item.label}
               onClick={() => handleItemClick(item)}
-              className="flex items-center gap-6 w-full px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
+              className="flex items-center gap-5 w-full px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#272727] transition-colors"
             >
               <span className="text-gray-700 dark:text-gray-400">{item.icon}</span>
-              <span className="text-sm text-gray-800 dark:text-gray-200">{item.label}</span>
+              <span className="text-[13px] text-gray-800 dark:text-gray-200">{item.label}</span>
             </button>
           ))}
 
-          <Separator className="my-3 dark:bg-gray-700" />
+          <Separator className="my-2 dark:bg-gray-700" />
 
           {/* Footer */}
-          <div className="px-3 py-3">
+          <div className="px-3 py-2">
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
               About Press Copyright Contact us Creators Advertise Developers
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-2">
               Terms Privacy Policy & Safety How YouTube works Test new features
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">© 2024 Google LLC</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">© 2025 Google LLC</p>
           </div>
         </div>
       </aside>

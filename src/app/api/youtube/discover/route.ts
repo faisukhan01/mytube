@@ -1,34 +1,33 @@
 import { NextResponse } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
-import { homeVideos, shortsVideos } from '@/lib/youtube-data';
 import type { Video } from '@/lib/youtube-data';
 
-// In-memory cache with TTL for search results
+// In-memory cache with TTL
 interface CacheEntry {
-  data: { videos: Video[]; total: number };
+  data: Video[];
   timestamp: number;
 }
 
-const searchCache = new Map<string, CacheEntry>();
+const cache = new Map<string, CacheEntry>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-function getFromCache(key: string): { videos: Video[]; total: number } | null {
-  const entry = searchCache.get(key);
+function getFromCache(key: string): Video[] | null {
+  const entry = cache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > CACHE_TTL) {
-    searchCache.delete(key);
+    cache.delete(key);
     return null;
   }
   return entry.data;
 }
 
-function setCache(key: string, data: { videos: Video[]; total: number }) {
-  searchCache.set(key, { data, timestamp: Date.now() });
+function setCache(key: string, data: Video[]) {
+  cache.set(key, { data, timestamp: Date.now() });
   // Evict old entries if cache is too large
-  if (searchCache.size > 100) {
-    const oldest = [...searchCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+  if (cache.size > 100) {
+    const oldest = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
     for (let i = 0; i < 20; i++) {
-      searchCache.delete(oldest[i][0]);
+      cache.delete(oldest[i][0]);
     }
   }
 }
@@ -64,9 +63,9 @@ function extractVideoId(url: string): string | null {
 }
 
 function extractChannelName(snippet: string, name: string): string {
-  // Try to extract channel name from snippet
+  // Try to extract channel name from snippet (often "Channel Name - 1M views - 2 years ago" or "Channel Name • 1M views • 2 years ago")
   if (snippet) {
-    // Try dash separator
+    // Try dash separator first
     const dashParts = snippet.split(/\s*[-–—]\s*/);
     if (dashParts.length > 1) {
       const candidate = dashParts[0].trim();
@@ -120,56 +119,64 @@ function formatRandomDuration(): string {
   return `${minutes}:${seconds}`;
 }
 
-function searchLocalVideos(query: string) {
-  const q = query.toLowerCase();
-  const allVideos = [...homeVideos, ...shortsVideos];
-  return allVideos.filter(
-    (v: { title: string; channelTitle: string; category: string; description: string }) =>
-      v.title.toLowerCase().includes(q) ||
-      v.channelTitle.toLowerCase().includes(q) ||
-      v.category.toLowerCase().includes(q) ||
-      v.description.toLowerCase().includes(q)
-  );
-}
+// Category-specific search query mappings
+const categoryQueryMap: Record<string, string> = {
+  'Music': 'popular music videos youtube 2025',
+  'Gaming': 'popular gaming videos youtube 2025',
+  'Programming': 'programming tutorials youtube 2025',
+  'Science': 'science videos youtube 2025',
+  'Cooking': 'cooking recipes youtube 2025',
+  'Sports': 'sports highlights youtube 2025',
+  'Entertainment': 'entertainment videos youtube 2025',
+  'Comedy': 'comedy videos youtube 2025',
+  'News': 'news videos youtube 2025',
+  'Podcasts': 'podcast episodes youtube 2025',
+  'Live': 'live stream youtube 2025',
+  'Movies': 'movie trailers youtube 2025',
+  'Fashion': 'fashion beauty youtube 2025',
+  'Fitness': 'fitness workout youtube 2025',
+  'Learning': 'learning educational youtube 2025',
+  'Travel': 'travel vlog youtube 2025',
+  'Recently uploaded': 'new videos youtube 2025',
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
-  const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
+  const query = searchParams.get('query') || '';
+  const category = searchParams.get('category') || '';
   const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20', 10), 1), 50);
 
-  if (!query) {
-    return NextResponse.json({ error: 'Query parameter "q" is required' }, { status: 400 });
+  // Build the search query
+  let searchQuery = query;
+  if (!searchQuery && category && categoryQueryMap[category]) {
+    searchQuery = categoryQueryMap[category];
+  }
+  if (!searchQuery) {
+    return NextResponse.json({ videos: [], error: 'Query or category parameter is required' }, { status: 400 });
   }
 
-  // Check cache first
-  const cacheKey = `search:${query}`;
+  // Check cache
+  const cacheKey = `discover:${searchQuery}:${limit}`;
   const cached = getFromCache(cacheKey);
-
   if (cached) {
-    const paginatedVideos = cached.videos.slice(offset, offset + limit);
-    return NextResponse.json({
-      videos: paginatedVideos,
-      total: cached.total,
-      offset,
-      limit,
-      cached: true,
-    });
+    return NextResponse.json({ videos: cached, cached: true });
   }
 
   try {
     const zai = await ZAI.create();
     const searchResult = await zai.functions.invoke('web_search', {
-      query: `youtube.com ${query}`,
-      num: 20,
+      query: `site:youtube.com ${searchQuery}`,
+      num: limit + 10, // Request extra to account for non-video results
     });
 
-    // Parse search results to extract YouTube video data
+    const results = Array.isArray(searchResult) ? searchResult : [];
+
+    // Extract YouTube video IDs from results
     const seenIds = new Set<string>();
     const apiVideos: Video[] = [];
 
-    for (const r of (Array.isArray(searchResult) ? searchResult : [])) {
-      if (!r.url) continue;
+    for (const r of results) {
+      if (!r.url || !r.name) continue;
 
       const videoId = extractVideoId(r.url);
       if (!videoId || seenIds.has(videoId)) continue;
@@ -177,7 +184,7 @@ export async function GET(request: Request) {
 
       const channelTitle = extractChannelName(r.snippet || '', r.name || '');
 
-      apiVideos.push({
+      const video: Video = {
         id: videoId,
         title: r.name || 'Untitled Video',
         thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
@@ -190,46 +197,25 @@ export async function GET(request: Request) {
         publishedAt: formatRandomTime(),
         duration: formatRandomDuration(),
         description: r.snippet || '',
-        category: 'Search',
+        category: category || 'Discover',
         likes: `${Math.floor(Math.random() * 900 + 100)}K`,
         subscribers: `${Math.floor(Math.random() * 50 + 1)}M`,
-      });
+      };
+
+      apiVideos.push(video);
+
+      if (apiVideos.length >= limit) break;
     }
 
-    // Combine with local results (deduplicated)
-    const localResults = searchLocalVideos(query);
-    const uniqueLocalResults = localResults.filter((v) => !seenIds.has(v.id));
-    const combinedResults = [...apiVideos, ...uniqueLocalResults];
+    // Cache the results
+    setCache(cacheKey, apiVideos);
 
-    // Cache the full combined results
-    setCache(cacheKey, { videos: combinedResults, total: combinedResults.length });
-
-    // Return paginated results
-    const paginatedVideos = combinedResults.slice(offset, offset + limit);
-
-    return NextResponse.json({
-      videos: paginatedVideos,
-      total: combinedResults.length,
-      offset,
-      limit,
-      cached: false,
-    });
+    return NextResponse.json({ videos: apiVideos, cached: false });
   } catch (error) {
-    console.error('Search API error:', error);
-    // Fallback to local search
-    const localResults = searchLocalVideos(query);
-
-    // Cache local results too
-    setCache(cacheKey, { videos: localResults, total: localResults.length });
-
-    const paginatedVideos = localResults.slice(offset, offset + limit);
-
+    console.error('Discover API error:', error);
     return NextResponse.json({
-      videos: paginatedVideos,
-      total: localResults.length,
-      offset,
-      limit,
-      cached: false,
+      videos: [],
+      error: 'Failed to fetch videos from web search',
     });
   }
 }

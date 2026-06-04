@@ -73,10 +73,10 @@ export default function CategoryChips() {
               <button
                 key={category}
                 onClick={() => handleChipClick(category)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 relative ${
                   isActive
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
-                    : 'bg-gray-100 dark:bg-[#272727] text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#3f3f3f]'
+                    ? 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+                    : 'bg-[#f2f2f2] dark:bg-[#272727] text-gray-800 dark:text-gray-200 hover:bg-[#e5e5e5] dark:hover:bg-[#3f3f3f]'
                 } ${isAnimating ? 'animate-bounce-in' : ''}`}
               >
                 {category}

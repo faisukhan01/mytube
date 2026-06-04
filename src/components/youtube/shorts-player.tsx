@@ -12,8 +12,20 @@ import {
   ChevronUp,
   ChevronDown,
   ArrowLeft,
+  Play,
+  ExternalLink,
+  Music2,
+  Send,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 // YouTube IFrame API types
@@ -33,6 +45,7 @@ declare global {
         events: {
           onReady: () => void;
           onStateChange: (event: YTPlayerEvent) => void;
+          onError: (event: YTPlayerEvent) => void;
         };
       }) => YTPlayer;
       PlayerState: {
@@ -42,6 +55,15 @@ declare global {
     onYouTubeIframeAPIReady?: () => void;
   }
 }
+
+// Sample comments for Shorts
+const sampleShortComments = [
+  { author: 'ShortsFan42', text: 'This is insane! 🔥🔥🔥', likes: 12400, time: '2 hours ago' },
+  { author: 'ViralKing', text: 'How does nobody talk about this?!', likes: 8900, time: '5 hours ago' },
+  { author: 'DailyScroll', text: 'I\'ve watched this 100 times already 😂', likes: 5600, time: '1 day ago' },
+  { author: 'TrendSetter', text: 'POV: you can\'t stop scrolling back to this', likes: 3200, time: '2 days ago' },
+  { author: 'MemeLord99', text: 'This broke the internet fr fr', likes: 2100, time: '3 days ago' },
+];
 
 export default function ShortsPlayer() {
   const {
@@ -58,10 +80,16 @@ export default function ShortsPlayer() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const [likeAnimating, setLikeAnimating] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState(sampleShortComments);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
   const playerRef = useRef<YTPlayer | null>(null);
   const swipeHintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalShorts = shortsVideos.length;
   const currentShort = shortsVideos[currentShortIndex];
@@ -69,6 +97,8 @@ export default function ShortsPlayer() {
   const goNext = useCallback(() => {
     if (currentShortIndex < totalShorts - 1) {
       setCurrentShortIndex(currentShortIndex + 1);
+      setVideoError(false);
+      setIsVideoReady(false);
       setShowSwipeHint(false);
     }
   }, [currentShortIndex, totalShorts, setCurrentShortIndex]);
@@ -76,9 +106,23 @@ export default function ShortsPlayer() {
   const goPrev = useCallback(() => {
     if (currentShortIndex > 0) {
       setCurrentShortIndex(currentShortIndex - 1);
+      setVideoError(false);
+      setIsVideoReady(false);
       setShowSwipeHint(false);
     }
   }, [currentShortIndex, setCurrentShortIndex]);
+
+  // Auto-advance when video errors or doesn't load
+  useEffect(() => {
+    if (videoError) {
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        goNext();
+      }, 3000);
+    }
+    return () => {
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    };
+  }, [videoError, goNext]);
 
   // Load YouTube IFrame API and set up auto-advance
   useEffect(() => {
@@ -98,7 +142,7 @@ export default function ShortsPlayer() {
         playerRef.current = new window.YT.Player('shorts-yt-player', {
           events: {
             onReady: () => {
-              // Player is ready
+              setIsVideoReady(true);
             },
             onStateChange: (event: YTPlayerEvent) => {
               // Auto-advance when video ends (state 0)
@@ -108,6 +152,14 @@ export default function ShortsPlayer() {
                   return prev;
                 });
               }
+              // Video is playing
+              if (event.data === 1) {
+                setIsVideoReady(true);
+                setVideoError(false);
+              }
+            },
+            onError: () => {
+              setVideoError(true);
             },
           },
         });
@@ -163,12 +215,16 @@ export default function ShortsPlayer() {
         e.preventDefault();
         goPrev();
       } else if (e.key === 'Escape') {
-        goHome();
+        if (showComments) {
+          setShowComments(false);
+        } else {
+          goHome();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goNext, goPrev, goHome]);
+  }, [goNext, goPrev, goHome, showComments]);
 
   // Touch / swipe handling
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -232,7 +288,7 @@ export default function ShortsPlayer() {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`https://www.youtube.com/watch?v=${videoId}`).then(() => {
+    navigator.clipboard.writeText(`https://www.youtube.com/shorts/${videoId}`).then(() => {
       toast.success('Link copied to clipboard');
     }).catch(() => {
       toast.error('Failed to copy link');
@@ -240,11 +296,23 @@ export default function ShortsPlayer() {
   };
 
   const handleRemix = () => {
-    toast.info('Remix feature coming soon');
+    toast.info('Remix this Short with your own creative spin!');
   };
 
   const handleComment = () => {
-    toast.info('Comments panel coming soon');
+    setShowComments(true);
+  };
+
+  const handlePostComment = () => {
+    if (!commentText.trim()) return;
+    setComments(prev => [{
+      author: 'You',
+      text: commentText,
+      likes: 0,
+      time: 'Just now',
+    }, ...prev]);
+    setCommentText('');
+    toast.success('Comment posted');
   };
 
   const handleSubscribe = () => {
@@ -257,19 +325,23 @@ export default function ShortsPlayer() {
     toast.success(isSaved ? 'Removed from Watch later' : 'Saved to Watch later');
   };
 
+  const formatNumber = (num: string) => {
+    return num;
+  };
+
   return (
     <div className="min-h-[calc(100vh-56px)] bg-[#0f0f0f] dark:bg-[#0f0f0f] flex items-start justify-center">
       {/* Back button */}
       <button
         onClick={goHome}
-        className="fixed top-16 left-2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white active:scale-95"
+        className="fixed top-16 left-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white active:scale-95"
         aria-label="Go back"
       >
         <ArrowLeft className="w-5 h-5" />
       </button>
 
       {/* Pulsing red recording dot indicator */}
-      <div className="fixed top-18 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+      <div className="fixed top-[68px] left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse-red" />
         <span className="text-white text-xs font-medium">Shorts</span>
       </div>
@@ -284,11 +356,11 @@ export default function ShortsPlayer() {
         {/* Main short container */}
         <div className="relative flex w-full max-w-[400px]">
           {/* Video container - 9:16 aspect ratio */}
-          <div className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-2xl animate-scale-in">
+          <div className="relative w-full aspect-[9/16] rounded-xl overflow-hidden bg-black shadow-2xl animate-scale-in">
             {/* YouTube iframe embed */}
             <iframe
               id="shorts-yt-player"
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&fs=0&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
               className="absolute inset-0 w-full h-full"
               allow="autoplay; encrypted-media"
               allowFullScreen
@@ -296,14 +368,46 @@ export default function ShortsPlayer() {
               key={currentShort.id}
             />
 
+            {/* Video unavailable fallback overlay */}
+            {videoError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-20">
+                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-4">
+                  <Play className="w-10 h-10 text-white/60 ml-1" />
+                </div>
+                <p className="text-white/80 text-sm mb-2">Video unavailable</p>
+                <a
+                  href={`https://www.youtube.com/shorts/${videoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-blue-400 text-xs hover:text-blue-300 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Watch on YouTube
+                </a>
+                <p className="text-white/40 text-[10px] mt-3">Skipping in 3s...</p>
+              </div>
+            )}
+
+            {/* Loading indicator */}
+            {!isVideoReady && !videoError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+                <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              </div>
+            )}
+
             {/* Bottom gradient overlay for text readability */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
               {/* Channel info and title */}
               <div className="p-3 pb-4">
+                {/* Music info if available */}
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Music2 className="w-3 h-3 text-white/60" />
+                  <span className="text-white/60 text-[11px]">Original sound - {currentShort.channelTitle}</span>
+                </div>
                 {/* Channel row */}
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-1.5">
                   <button
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 border border-white/20"
                     style={{ backgroundColor: currentShort.channelColor }}
                     onClick={() => openChannel(currentShort.channelTitle)}
                     aria-label={`Go to ${currentShort.channelTitle} channel`}
@@ -311,18 +415,17 @@ export default function ShortsPlayer() {
                     {currentShort.channelInitial}
                   </button>
                   <span
-                    className="text-white text-sm font-medium cursor-pointer hover:opacity-80 truncate max-w-[160px]"
+                    className="text-white text-[13px] font-medium cursor-pointer hover:opacity-80 truncate max-w-[140px]"
                     onClick={() => openChannel(currentShort.channelTitle)}
                   >
                     {currentShort.channelTitle}
                   </span>
                   <Button
                     size="sm"
-                    variant={isSubscribed ? 'outline' : 'default'}
-                    className={`h-7 text-xs px-3 rounded-full font-medium shrink-0 transition-all duration-200 ${
+                    className={`h-7 text-[11px] px-3 rounded-full font-medium shrink-0 transition-all duration-200 ${
                       isSubscribed
-                        ? 'bg-transparent text-white border-white/30 hover:bg-white/10'
-                        : 'bg-white text-black hover:bg-gray-200'
+                        ? 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                        : 'bg-[#ff0000] text-white hover:bg-[#cc0000]'
                     }`}
                     onClick={handleSubscribe}
                   >
@@ -330,7 +433,7 @@ export default function ShortsPlayer() {
                   </Button>
                 </div>
                 {/* Title */}
-                <p className="text-white text-sm line-clamp-2 leading-5">
+                <p className="text-white text-[13px] line-clamp-2 leading-4">
                   {currentShort.title}
                 </p>
               </div>
@@ -349,24 +452,29 @@ export default function ShortsPlayer() {
             {currentShortIndex < totalShorts - 1 && (
               <button
                 onClick={goNext}
-                className="absolute bottom-[140px] left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white/80 hover:text-white active:scale-90"
+                className="absolute bottom-[120px] left-1/2 -translate-x-1/2 z-10 p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-all duration-150 text-white/80 hover:text-white active:scale-90"
                 aria-label="Next short"
               >
                 <ChevronDown className="w-5 h-5" />
               </button>
             )}
 
-            {/* Swipe up indicator - improved animation */}
+            {/* Swipe up indicator */}
             {showSwipeHint && currentShortIndex < totalShorts - 1 && (
-              <div className="absolute bottom-[160px] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 animate-swipe-hint">
+              <div className="absolute bottom-[140px] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 animate-swipe-hint">
                 <ChevronDown className="w-4 h-4 text-white/60" />
                 <span className="text-white/60 text-[11px] font-medium">Swipe up</span>
               </div>
             )}
+
+            {/* Progress bar at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/10">
+              <div className="h-full bg-white/80 transition-all duration-300" style={{ width: '0%' }} />
+            </div>
           </div>
 
           {/* Right-side action bar */}
-          <div className="flex flex-col items-center gap-4 ml-2 pt-4 sm:ml-3">
+          <div className="flex flex-col items-center gap-3 ml-2 pt-4 sm:ml-3">
             {/* Like */}
             <button
               onClick={handleLike}
@@ -377,8 +485,7 @@ export default function ShortsPlayer() {
                 <ThumbsUp className={`w-6 h-6 transition-colors duration-200 ${isLiked ? 'text-white' : 'text-white/80 group-hover:text-white'}`} fill={isLiked ? 'white' : 'none'} />
               </div>
               <span className="text-white/80 text-[11px] relative">
-                {isLiked ? (parseInt(currentShort.likes || '0', 10) + 1) : currentShort.likes || '0'}
-                {/* Flying number animation on like */}
+                {formatNumber(isLiked ? (parseInt(currentShort.likes || '0', 10) + 1).toString() : currentShort.likes || '0')}
                 {likeAnimating && (
                   <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-white text-[11px] font-bold animate-fly-up">
                     +1
@@ -407,7 +514,7 @@ export default function ShortsPlayer() {
               <div className="p-2 rounded-full hover:bg-white/10 transition-all duration-200">
                 <MessageCircle className="w-6 h-6 text-white/80 group-hover:text-white" />
               </div>
-              <span className="text-white/80 text-[11px]">Comments</span>
+              <span className="text-white/80 text-[11px]">{comments.length > 5 ? `${comments.length - 5}K` : comments.length}</span>
             </button>
 
             {/* Share */}
@@ -449,7 +556,7 @@ export default function ShortsPlayer() {
             </button>
 
             {/* Channel avatar (rounded with ring) */}
-            <div className="mt-1">
+            <div className="mt-1 relative">
               <button
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium ring-2 ring-white/30 overflow-hidden transition-transform duration-200 hover:scale-110"
                 style={{ backgroundColor: currentShort.channelColor }}
@@ -458,11 +565,16 @@ export default function ShortsPlayer() {
               >
                 {currentShort.channelInitial}
               </button>
+              {!isSubscribed && (
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#ff0000] rounded-full flex items-center justify-center">
+                  <span className="text-white text-[8px] font-bold">+</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Progress indicator */}
+        {/* Progress indicator dots */}
         <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
           {Array.from({ length: Math.min(totalShorts, 10) }).map((_, i) => {
             const visualIndex = currentShortIndex < 5
@@ -474,7 +586,7 @@ export default function ShortsPlayer() {
             return (
               <div
                 key={visualIndex}
-                className={`h-0.5 rounded-full transition-all duration-300 ${
+                className={`h-[2px] rounded-full transition-all duration-300 ${
                   visualIndex === currentShortIndex
                     ? 'w-4 bg-white'
                     : 'w-1.5 bg-white/30'
@@ -484,6 +596,68 @@ export default function ShortsPlayer() {
           })}
         </div>
       </div>
+
+      {/* Comments Dialog */}
+      <Dialog open={showComments} onOpenChange={setShowComments}>
+        <DialogContent className="sm:max-w-md bg-[#282828] border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white">Comments</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {comments.map((comment, idx) => (
+              <div key={idx} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
+                  {comment.author.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-medium text-white">{comment.author}</span>
+                    <span className="text-[11px] text-gray-400">{comment.time}</span>
+                  </div>
+                  <p className="text-[13px] text-gray-300 mt-0.5">{comment.text}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <button className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors">
+                      <ThumbsUp className="w-3 h-3" />
+                      <span className="text-[11px]">{comment.likes > 1000 ? `${(comment.likes / 1000).toFixed(1)}K` : comment.likes}</span>
+                    </button>
+                    <button className="text-gray-400 hover:text-white transition-colors">
+                      <ThumbsDown className="w-3 h-3" />
+                    </button>
+                    <button className="text-[11px] text-gray-400 hover:text-white transition-colors">Reply</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-700">
+            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
+              U
+            </div>
+            <div className="flex-1 flex gap-2">
+              <Textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Add a comment..."
+                className="min-h-[36px] max-h-[80px] resize-none bg-transparent border-gray-600 text-white placeholder-gray-500 text-[13px]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePostComment();
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                onClick={handlePostComment}
+                disabled={!commentText.trim()}
+                className="bg-[#3ea6ff] hover:bg-[#65b8ff] text-black rounded-full px-4 shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
