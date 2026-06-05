@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useYouTubeStore } from '@/store/youtube-store';
 import { homeVideos } from '@/lib/youtube-data';
 
@@ -13,7 +13,7 @@ interface ChannelInfo {
 }
 
 export default function ChannelStories() {
-  const { openChannel, user, selectedCategory, currentView } = useYouTubeStore();
+  const { openChannel, selectedCategory, currentView } = useYouTubeStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -103,41 +103,6 @@ export default function ChannelStories() {
           className="flex items-start gap-3 sm:gap-4 overflow-x-auto px-4 md:px-6 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {/* "Your story" / Create story item */}
-          <button
-            className="flex flex-col items-center gap-1.5 shrink-0 w-[72px] sm:w-[80px] group"
-            onClick={() => {
-              if (!user) {
-                useYouTubeStore.getState().setShowAuthDialog(true);
-              }
-            }}
-          >
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
-              {user ? (
-                <>
-                  <div
-                    className="w-full h-full rounded-full flex items-center justify-center text-white font-medium text-lg"
-                    style={{ backgroundColor: user.color || '#FF0000' }}
-                  >
-                    {user.initials || user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 sm:w-6 sm:h-6 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0f0f0f]">
-                    <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-full h-full rounded-full bg-gray-200 dark:bg-[#272727] flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-gray-500 dark:text-gray-400" />
-                  </div>
-                </>
-              )}
-            </div>
-            <span className="text-[11px] sm:text-[12px] text-gray-700 dark:text-gray-300 line-clamp-1 text-center w-full">
-              {user ? 'Your story' : 'Create'}
-            </span>
-          </button>
-
           {/* Channel story items */}
           {channels.map((channel) => {
             const hasNewContent = newContentChannels.has(channel.channelTitle);

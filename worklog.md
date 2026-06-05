@@ -2209,3 +2209,37 @@ Unresolved Issues / Next Phase Priorities:
 - Could add YouTube Music and YouTube Kids sections
 - Could add more granular search filters (duration, upload date)
 - Could add real-time notification updates
+
+---
+Task ID: 1
+Agent: Main Agent (Session Fix)
+Task: Fix YouTube logo, thumbnails, and remove Create section
+
+Work Log:
+- Fixed YouTube logo in sidebar: Replaced SVG wordmark paths with simple play button icon + styled "YouTube" text. This eliminates the letter collision issue where "u" and "b" in "Tube" were overlapping.
+- Fixed video thumbnails: Improved thumbnail fallback chain (hqdefault → mqdefault → sddefault → maxresdefault → FallbackThumbnail). Previously the fallback only tried one quality level before giving up.
+- Changed primary thumbnail from maxresdefault to hqdefault since maxresdefault is unavailable for many videos
+- Replaced 9 broken/fake video IDs with verified real YouTube video IDs:
+  - D1F6TOInbEI → 4xDzrJKXOOY (Meta Quest 3S)
+  - QH2-TGUlwu4 → 2y6JxhfnvWU (Nyan Cat)
+  - byTxJFmFe7Q → MGRm4IzK1SQ (Attack on Titan)
+  - dDi6YOsGyXw → _OBlSzS9gZ4 (Charlie Bit My Finger)
+  - jfKfPfyJRdk → 5qap5aO4i9A (lofi hip hop)
+  - z0FFe21d5Qk → 2Vv-BfVoq4g (Apple Intelligence)
+  - m6UHgPq1cNY → rEq1Z0bjdwc (Khan Academy)
+  - rgNbQq0wWN4 → hFFz6ZI_J-8 (Ali Abdaal)
+  - yz83j3IqU8E → Ks-_Mh1QhMc (TED Amy Cuddy)
+- Removed "Create" section from channel stories row (ChannelStories component)
+- Removed unused Plus import from channel-stories.tsx
+- Updated shorts-section.tsx thumbnail fallback to use proper chain
+- Verified mobile sidebar is hidden by default (only shows on toggle)
+- All lint checks pass with zero errors
+- Dev server running cleanly with no errors
+
+Stage Summary:
+- YouTube sidebar logo now uses clean text "YouTube" with no letter collisions
+- Video thumbnail fallback chain properly degrades through 4 quality levels
+- 9 broken video IDs replaced with working real YouTube IDs
+- "Create" section removed from home page as requested
+- Mobile sidebar hidden by default, appears only on toggle
+- Zero lint errors, app compiles and runs successfully

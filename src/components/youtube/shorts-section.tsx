@@ -40,7 +40,13 @@ export default function ShortsSection() {
                 loading="lazy"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
+                  if (target.src.includes('maxresdefault.jpg')) {
+                    target.src = target.src.replace('maxresdefault.jpg', 'hqdefault.jpg');
+                  } else if (target.src.includes('hqdefault.jpg')) {
+                    target.src = target.src.replace('hqdefault.jpg', 'mqdefault.jpg');
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">

@@ -41,10 +41,17 @@ function FallbackThumbnail({ color, initial }: { color: string; initial: string 
   );
 }
 
+// Thumbnail quality fallback chain
+type ThumbQuality = 'maxresdefault' | 'hqdefault' | 'mqdefault' | 'sddefault';
+
+function getThumbnailUrl(videoId: string, quality: ThumbQuality): string {
+  return `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
+}
+
 export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   const { openVideo, openShort, toggleWatchLater, toggleLike, watchLater, likedVideos, openChannel, watchProgress, addToQueue, currentVideo, hideVideo, unhideVideo, hiddenVideos } = useYouTubeStore();
   const [imageError, setImageError] = useState(false);
-  const [fallbackAttempted, setFallbackAttempted] = useState(false);
+  const [thumbQuality, setThumbQuality] = useState<ThumbQuality>('hqdefault');
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -52,9 +59,10 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thumbnailSwapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Generate preview thumbnail URL (different frame)
+  // Current thumbnail URL based on quality fallback
   const videoId = video.id;
-  const previewThumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+  const currentThumbnailUrl = getThumbnailUrl(videoId, thumbQuality);
+  const previewThumbnailUrl = getThumbnailUrl(videoId, 'hqdefault');
   const isWatchLater = watchLater.includes(video.id);
   const isLiked = likedVideos.includes(video.id);
 
@@ -64,14 +72,25 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
   // Check if this is the currently playing video
   const isCurrentlyPlaying = currentVideo?.id === video.id;
 
+  // Thumbnail error fallback chain
+  const handleThumbnailError = () => {
+    if (thumbQuality === 'hqdefault') {
+      setThumbQuality('mqdefault');
+    } else if (thumbQuality === 'mqdefault') {
+      setThumbQuality('sddefault');
+    } else if (thumbQuality === 'sddefault') {
+      setThumbQuality('maxresdefault');
+    } else {
+      setImageError(true);
+    }
+  };
+
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (layout === 'grid') {
-      // Thumbnail swap preview after 500ms
       thumbnailSwapTimeoutRef.current = setTimeout(() => {
         setIsPreviewing(true);
       }, 500);
-      // Show enhanced tooltip after 1.5s
       previewTimeoutRef.current = setTimeout(() => {
         setShowPreview(true);
       }, 1500);
@@ -185,18 +204,10 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
           {!imageError ? (
             <img
-              src={video.thumbnail}
+              src={currentThumbnailUrl}
               alt={video.title}
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 ease-out"
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
-                  setFallbackAttempted(true);
-                  img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
-                } else {
-                  setImageError(true);
-                }
-              }}
+              onError={handleThumbnailError}
               loading="lazy"
             />
           ) : (
@@ -223,18 +234,10 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         <div className="relative shrink-0 w-[168px] h-[94px] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
           {!imageError ? (
             <img
-              src={video.thumbnail}
+              src={currentThumbnailUrl}
               alt={video.title}
               className="w-full h-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
-                  setFallbackAttempted(true);
-                  img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
-                } else {
-                  setImageError(true);
-                }
-              }}
+              onError={handleThumbnailError}
               loading="lazy"
             />
           ) : (
@@ -252,7 +255,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
             </span>
           )}
-          {/* Playing now indicator */}
           {isCurrentlyPlaying && (
             <div className="absolute bottom-0 left-0 right-0 h-[3px] flex items-end justify-center bg-black/30">
               <div className="playing-indicator mb-1">
@@ -260,7 +262,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
               </div>
             </div>
           )}
-          {/* Watch progress bar */}
           {progress > 0 && !isCurrentlyPlaying ? (
             <div className="absolute bottom-0 left-0 watched-progress-thin" style={{ width: `${progress}%` }} />
           ) : !isCurrentlyPlaying ? (
@@ -346,20 +347,12 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           <>
             {/* Primary thumbnail */}
             <img
-              src={video.thumbnail}
+              src={currentThumbnailUrl}
               alt={video.title}
               className={`w-full h-full object-cover object-center transition-all duration-300 ease-out ${
                 isPreviewing ? 'opacity-0' : 'opacity-100'
               }`}
-              onError={(e) => {
-                const img = e.currentTarget;
-                if (!fallbackAttempted && img.src.includes('hqdefault.jpg')) {
-                  setFallbackAttempted(true);
-                  img.src = img.src.replace('hqdefault.jpg', 'mqdefault.jpg');
-                } else {
-                  setImageError(true);
-                }
-              }}
+              onError={handleThumbnailError}
               loading="lazy"
             />
             {/* Preview thumbnail (swapped on hover) */}
@@ -376,19 +369,16 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
         ) : (
           <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
         )}
-        {/* Preview badge - shown during hover preview */}
         {isPreviewing && !imageError && (
           <span className="absolute top-1.5 left-1.5 bg-black/80 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-[3px] backdrop-blur-sm z-10">
             Preview
           </span>
         )}
-        {/* Preview progress bar - animates during hover preview */}
         {isPreviewing && !imageError && (
           <div className="absolute bottom-0 left-0 right-0 z-10">
             <div className="h-[2px] bg-red-600 animate-preview-progress" />
           </div>
         )}
-        {/* Animated duration badge */}
         <span className={`absolute bottom-1.5 right-1.5 bg-black/80 duration-badge-blur text-white text-[12px] font-medium px-1 py-0.5 rounded-[4px] transition-all duration-200 ${
           isHovered ? 'bg-black scale-110 shadow-lg' : ''
         } ${isPreviewing ? 'z-10' : ''}`}>
@@ -399,7 +389,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
           </span>
         )}
-        {/* Playing now indicator */}
         {isCurrentlyPlaying && (
           <div className="absolute bottom-0 left-0 right-0 h-[3px] flex items-end justify-center bg-black/30">
             <div className="playing-indicator mb-1">
@@ -407,9 +396,7 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             </div>
           </div>
         )}
-        {/* Subtle hover brightness change */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/[0.03] transition-colors duration-300 rounded-xl" />
-        {/* Quick action overlay buttons */}
         <div className="absolute top-1.5 right-1.5 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out translate-y-2 group-hover:translate-y-0 z-10">
           <button
             onClick={handleWatchLater}
@@ -426,7 +413,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
             <ListPlus className="w-4 h-4 text-white" />
           </button>
         </div>
-        {/* Watch progress bar */}
         {progress > 0 && !isCurrentlyPlaying && !isPreviewing ? (
           <div className="absolute bottom-0 left-0 watched-progress-thin" style={{ width: `${progress}%` }} />
         ) : !isCurrentlyPlaying && !isPreviewing ? (
@@ -438,29 +424,25 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
       {showPreview && layout === 'grid' && (
         <div className="absolute z-50 left-0 right-0 -bottom-2 translate-y-full pointer-events-none animate-fade-in">
           <div className="bg-white dark:bg-[#282828] border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-2 text-sm">
-            {/* Mini thumbnail with play icon overlay */}
             <div className="relative aspect-video rounded-md overflow-hidden mb-2">
               {!imageError ? (
                 <img
-                  src={video.thumbnail}
+                  src={currentThumbnailUrl}
                   alt={video.title}
                   className="w-full h-full object-cover object-center"
                 />
               ) : (
                 <FallbackThumbnail color={video.channelColor} initial={video.channelInitial} />
               )}
-              {/* Play icon overlay */}
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                 <div className="w-10 h-10 rounded-full bg-black/70 flex items-center justify-center">
                   <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                 </div>
               </div>
-              {/* Duration badge */}
               <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[11px] font-medium px-1 py-0.5 rounded-[3px]">
                 {video.duration}
               </span>
             </div>
-            {/* Video info */}
             <p className="font-semibold text-gray-900 dark:text-white line-clamp-2 text-[13px] leading-4">
               {video.title}
             </p>
@@ -476,7 +458,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
 
       {/* Info */}
       <div className="flex gap-2 sm:gap-3 mt-2 sm:mt-3">
-        {/* Channel avatar */}
         <ChannelHoverCard
           channelTitle={video.channelTitle}
           channelInitial={video.channelInitial}
@@ -492,7 +473,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           </button>
         </ChannelHoverCard>
 
-        {/* Text */}
         <div className="flex-1 min-w-0">
           <h3 className="text-[13px] sm:text-sm font-medium text-[#0f0f0f] dark:text-white line-clamp-2 leading-4 sm:leading-5 flex items-start gap-1.5">
             <span className="flex-1">{video.title}</span>
@@ -520,7 +500,6 @@ export default function VideoCard({ video, layout = 'grid' }: VideoCardProps) {
           </p>
         </div>
 
-        {/* Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
