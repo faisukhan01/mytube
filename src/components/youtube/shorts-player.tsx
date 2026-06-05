@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { shortsVideos } from '@/lib/youtube-data';
+import { shortsVideos, getShuffledShorts, type Video } from '@/lib/youtube-data';
 import { useYouTubeStore } from '@/store/youtube-store';
 import {
   ThumbsUp,
@@ -104,8 +104,11 @@ export default function ShortsPlayer() {
   const lastTapRef = useRef<number>(0);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const totalShorts = shortsVideos.length;
-  const currentShort = shortsVideos[currentShortIndex];
+  // Use lazy initialization to shuffle shorts on mount (random order each visit)
+  const [shuffledShorts] = useState<Video[]>(() => getShuffledShorts());
+
+  const totalShorts = shuffledShorts.length;
+  const currentShort = shuffledShorts[currentShortIndex];
 
   const goNext = useCallback(() => {
     if (currentShortIndex < totalShorts - 1) {

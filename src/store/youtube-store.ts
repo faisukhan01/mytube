@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Video, Comment, shortsVideos } from '@/lib/youtube-data';
+import { Video, Comment, shortsVideos, getShuffledShorts } from '@/lib/youtube-data';
 
 export type ViewMode = 'home' | 'player' | 'search' | 'shorts' | 'trending' | 'history' | 'liked' | 'watchlater' | 'subscriptions' | 'channel' | 'playlist';
 
@@ -168,8 +168,8 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   currentVideo: null,
   currentShortIndex: 0,
   searchQuery: '',
-  sidebarOpen: true,
-  sidebarMini: false,
+  sidebarOpen: false,
+  sidebarMini: true,
   selectedCategory: 'All',
   searchResults: [],
   comments: [],
@@ -350,11 +350,13 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   },
 
   openShort: (index) => {
+    // If no specific index, start from a random position for variety
+    const shortIndex = index >= 0 ? index : Math.floor(Math.random() * shortsVideos.length);
     set({
       currentView: 'shorts',
-      currentShortIndex: index,
+      currentShortIndex: shortIndex,
     });
-    const shortVideo = shortsVideos[index];
+    const shortVideo = shortsVideos[shortIndex];
     if (shortVideo) {
       updateHash(`#/shorts/${shortVideo.id}`);
     } else {

@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useYouTubeStore, parseHash } from '@/store/youtube-store';
-import { getVideoById, shortsVideos } from '@/lib/youtube-data';
+import { getVideoById, shortsVideos, getShuffledShorts } from '@/lib/youtube-data';
 import YouTubeHeader from '@/components/youtube/header';
 import YouTubeSidebar from '@/components/youtube/sidebar';
 import CategoryChips from '@/components/youtube/category-chips';
@@ -59,8 +59,9 @@ export default function Home() {
       }
     } else if (hashInfo.view === 'shorts') {
       if (hashInfo.videoId) {
-        const index = shortsVideos.findIndex((v) => v.id === hashInfo.videoId);
-        store.openShort(index >= 0 ? index : 0);
+        // When opening a specific short via URL, just open Shorts view
+        // The ShortsPlayer will show from the beginning with shuffled order
+        store.setCurrentView('shorts');
       } else {
         store.setCurrentView('shorts');
       }

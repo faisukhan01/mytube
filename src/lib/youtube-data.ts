@@ -492,13 +492,27 @@ export const shortsVideos: Video[] = [
   createVideo('jcStDTXMHAU', 'How to juggle in 30 seconds 🤹', '5-Minute Crafts', '8M views', '6 months ago', '0:28', 'Quick juggling tutorial - learn to juggle fast.', 'Learning', '80M'),
 ];
 
+// Fisher-Yates shuffle algorithm - returns a new shuffled array
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function getVideoById(id: string): Video | undefined {
   return [...homeVideos, ...shortsVideos].find(v => v.id === id);
 }
 
 export function getVideosByCategory(category: string): Video[] {
-  if (category === 'All') return homeVideos;
-  return homeVideos.filter(v => v.category === category);
+  if (category === 'All') return shuffleArray(homeVideos);
+  return shuffleArray(homeVideos.filter(v => v.category === category));
+}
+
+export function getShuffledShorts(): Video[] {
+  return shuffleArray(shortsVideos);
 }
 
 export function searchVideos(query: string): Video[] {
