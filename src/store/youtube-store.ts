@@ -142,7 +142,70 @@ interface YouTubeState {
   setShowAuthDialog: (show: boolean) => void;
   fetchUserData: () => Promise<void>;
   checkSession: () => Promise<void>;
+  signIn: (email: string, password: string) => { success: boolean; error?: string };
+  signUp: (name: string, email: string, password: string) => { success: boolean; error?: string };
 }
+
+// ── localStorage auth helpers ─────────────────────────────────────────────
+
+interface StoredAccount {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  avatar: string;
+  initials: string;
+  color: string;
+}
+
+const AVATAR_COLORS = ['#7C3AED', '#2563EB', '#DC2626', '#059669', '#D97706', '#DB2777', '#0891B2'];
+
+function simpleHash(str: string): string {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = Math.imul(31, h) + str.charCodeAt(i) | 0; }
+  return btoa(String(h));
+}
+
+function getInitials(name: string): string {
+  return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'U';
+}
+
+function loadAccounts(): StoredAccount[] {
+  if (typeof window === 'undefined') return [];
+  try { return JSON.parse(localStorage.getItem('mytube_accounts') || '[]'); } catch { return []; }
+}
+
+function saveAccounts(accounts: StoredAccount[]) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem('mytube_accounts', JSON.stringify(accounts)); } catch {}
+}
+
+function loadSession(): UserData | null {
+  if (typeof window === 'undefined') return null;
+  try { const s = localStorage.getItem('mytube_session'); return s ? JSON.parse(s) : null; } catch { return null; }
+}
+
+function saveSession(user: UserData) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem('mytube_session', JSON.stringify(user)); } catch {}
+}
+
+function clearSessionStorage() {
+  if (typeof window === 'undefined') return;
+  try { localStorage.removeItem('mytube_session'); } catch {}
+}
+
+function loadUserData(userId: string) {
+  if (typeof window === 'undefined') return { liked: [], watchlater: [], history: [] };
+  try { return JSON.parse(localStorage.getItem(`mytube_ud_${userId}`) || '{}'); } catch { return {}; }
+}
+
+function saveUserData(userId: string, liked: string[], watchlater: string[], history: string[]) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(`mytube_ud_${userId}`, JSON.stringify({ liked, watchlater, history })); } catch {}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function loadPlaylistsFromStorage(): Playlist[] {
   if (typeof window === 'undefined') return [];
@@ -219,102 +282,28 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
 
   toggleLike: (videoId) => {
     const state = get();
-    const isLiked = state.likedVideos.includes(videoId);
-
-    // Update local state immediately
-    set((s) => ({
-      likedVideos: s.likedVideos.includes(videoId)
-        ? s.likedVideos.filter(id => id !== videoId)
-        : [...s.likedVideos, videoId],
-    }));
-
-    // Persist to server if logged in
-    if (state.user) {
-      if (isLiked) {
-        fetch('/api/user/videos', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoId, type: 'liked' }),
-        }).catch(() => {
-          // Revert on error
-          set((s) => ({
-            likedVideos: s.likedVideos.includes(videoId)
-              ? s.likedVideos
-              : [...s.likedVideos, videoId],
-          }));
-        });
-      } else {
-        fetch('/api/user/videos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoId, type: 'liked' }),
-        }).catch(() => {
-          // Revert on error
-          set((s) => ({
-            likedVideos: s.likedVideos.filter(id => id !== videoId),
-          }));
-        });
-      }
-    }
+    const updated = state.likedVideos.includes(videoId)
+      ? state.likedVideos.filter(id => id !== videoId)
+      : [...state.likedVideos, videoId];
+    set({ likedVideos: updated });
+    if (state.user) saveUserData(state.user.id, updated, state.watchLater, state.watchHistory);
   },
 
   toggleWatchLater: (videoId) => {
     const state = get();
-    const isInList = state.watchLater.includes(videoId);
-
-    // Update local state immediately
-    set((s) => ({
-      watchLater: s.watchLater.includes(videoId)
-        ? s.watchLater.filter(id => id !== videoId)
-        : [...s.watchLater, videoId],
-    }));
-
-    // Persist to server if logged in
-    if (state.user) {
-      if (isInList) {
-        fetch('/api/user/videos', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoId, type: 'watchlater' }),
-        }).catch(() => {
-          set((s) => ({
-            watchLater: s.watchLater.includes(videoId)
-              ? s.watchLater
-              : [...s.watchLater, videoId],
-          }));
-        });
-      } else {
-        fetch('/api/user/videos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoId, type: 'watchlater' }),
-        }).catch(() => {
-          set((s) => ({
-            watchLater: s.watchLater.filter(id => id !== videoId),
-          }));
-        });
-      }
-    }
+    const updated = state.watchLater.includes(videoId)
+      ? state.watchLater.filter(id => id !== videoId)
+      : [...state.watchLater, videoId];
+    set({ watchLater: updated });
+    if (state.user) saveUserData(state.user.id, state.likedVideos, updated, state.watchHistory);
   },
 
   addToHistory: (videoId) => {
     const state = get();
-
-    // Update local state immediately
-    set((s) => ({
-      watchHistory: [videoId, ...s.watchHistory.filter(id => id !== videoId)],
-    }));
-
-    // Persist to server if logged in
-    if (state.user) {
-      fetch('/api/user/videos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId, type: 'history' }),
-      }).catch(() => {
-        // Silent fail for history
-      });
-    }
+    if (state.historyPaused) return;
+    const updated = [videoId, ...state.watchHistory.filter(id => id !== videoId)];
+    set({ watchHistory: updated });
+    if (state.user) saveUserData(state.user.id, state.likedVideos, state.watchLater, updated);
   },
 
   setMiniPlayerVideo: (video) => set({ miniPlayerVideo: video }),
@@ -527,53 +516,36 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
   setUser: (user) => set({ user }),
 
   clearUser: async () => {
-    try {
-      await fetch('/api/auth/signout', { method: 'POST' });
-    } catch {
-      // Silent fail
-    }
-    set({
-      user: null,
-      likedVideos: [],
-      watchLater: [],
-      watchHistory: [],
-    });
+    clearSessionStorage();
+    set({ user: null, likedVideos: [], watchLater: [], watchHistory: [] });
   },
 
   toggleAuthDialog: () => set((state) => ({ showAuthDialog: !state.showAuthDialog })),
   setShowAuthDialog: (show) => set({ showAuthDialog: show }),
 
   fetchUserData: async () => {
-    try {
-      const res = await fetch('/api/user/videos');
-      if (res.ok) {
-        const data = await res.json();
-        set({
-          likedVideos: data.liked || [],
-          watchLater: data.watchlater || [],
-          watchHistory: data.history || [],
-        });
-      }
-    } catch {
-      // Silent fail
-    }
+    const user = get().user;
+    if (!user) return;
+    const data = loadUserData(user.id);
+    set({
+      likedVideos: data.liked || [],
+      watchLater: data.watchlater || [],
+      watchHistory: data.history || [],
+    });
   },
 
   checkSession: async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        const user = await res.json();
-        set({ user });
-        await get().fetchUserData();
-      }
-    } catch {
-      // Not authenticated, that's fine
+    const user = loadSession();
+    if (user) {
+      set({ user });
+      const data = loadUserData(user.id);
+      set({
+        likedVideos: data.liked || [],
+        watchLater: data.watchlater || [],
+        watchHistory: data.history || [],
+      });
     }
-    // Load playlists from localStorage regardless of auth
     const playlists = loadPlaylistsFromStorage();
-
-    // Load watch progress from localStorage
     let watchProgress: Record<string, number> = {};
     if (typeof window !== 'undefined') {
       try {
@@ -583,7 +555,40 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
         watchProgress = {};
       }
     }
-
     set({ playlists, watchProgress });
+  },
+
+  signIn: (email, password) => {
+    const accounts = loadAccounts();
+    const account = accounts.find(a => a.email.toLowerCase() === email.toLowerCase().trim());
+    if (!account) return { success: false, error: 'No account found with this email. Please sign up first.' };
+    if (account.passwordHash !== simpleHash(password)) return { success: false, error: 'Incorrect password. Please try again.' };
+    const userData: UserData = { id: account.id, name: account.name, email: account.email, avatar: account.avatar, initials: account.initials, color: account.color };
+    saveSession(userData);
+    set({ user: userData });
+    const data = loadUserData(userData.id);
+    set({ likedVideos: data.liked || [], watchLater: data.watchlater || [], watchHistory: data.history || [] });
+    return { success: true };
+  },
+
+  signUp: (name, email, password) => {
+    const accounts = loadAccounts();
+    if (accounts.find(a => a.email.toLowerCase() === email.toLowerCase().trim())) {
+      return { success: false, error: 'An account with this email already exists.' };
+    }
+    const account: StoredAccount = {
+      id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      passwordHash: simpleHash(password),
+      avatar: '',
+      initials: getInitials(name),
+      color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
+    };
+    saveAccounts([...accounts, account]);
+    const userData: UserData = { id: account.id, name: account.name, email: account.email, avatar: account.avatar, initials: account.initials, color: account.color };
+    saveSession(userData);
+    set({ user: userData, likedVideos: [], watchLater: [], watchHistory: [] });
+    return { success: true };
   },
 }));

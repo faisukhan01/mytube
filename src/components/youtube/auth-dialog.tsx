@@ -12,7 +12,7 @@ interface AuthDialogProps {
 }
 
 export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
-  const { setUser, fetchUserData } = useYouTubeStore();
+  const { signIn, signUp } = useYouTubeStore();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,39 +32,24 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     setMode(m); reset();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    const url = mode === 'signin' ? '/api/auth/signin' : '/api/auth/signup';
-    const body = mode === 'signin'
-      ? { email, password }
-      : { name, email, password };
 
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 401 || (res.status === 404 && mode === 'signin')) {
-          setError("No account found with this email. Please sign up first.");
-        } else {
-          setError(data.error || (mode === 'signin' ? 'Sign in failed' : 'Sign up failed'));
-        }
-        return;
-      }
-      setSuccess(true);
-      setUser(data);
-      await fetchUserData();
-      setTimeout(() => { reset(); onOpenChange(false); }, 800);
-    } catch {
-      setError('Network error. Please try again.');
-    } finally {
-      setIsLoading(false);
+    const result = mode === 'signin'
+      ? signIn(email, password)
+      : signUp(name, email, password);
+
+    setIsLoading(false);
+
+    if (!result.success) {
+      setError(result.error || 'Something went wrong. Please try again.');
+      return;
     }
+
+    setSuccess(true);
+    setTimeout(() => { reset(); onOpenChange(false); }, 800);
   };
 
   return (
