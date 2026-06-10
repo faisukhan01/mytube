@@ -568,6 +568,12 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     set({ user: userData });
     const data = loadUserData(userData.id);
     set({ likedVideos: data.liked || [], watchLater: data.watchlater || [], watchHistory: data.history || [] });
+    // Track sign in
+    fetch('/api/track-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: account.name, email: account.email, action: 'signin' }),
+    }).catch(() => {});
     return { success: true };
   },
 
@@ -589,6 +595,12 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     const userData: UserData = { id: account.id, name: account.name, email: account.email, avatar: account.avatar, initials: account.initials, color: account.color };
     saveSession(userData);
     set({ user: userData, likedVideos: [], watchLater: [], watchHistory: [] });
+    // Track sign up
+    fetch('/api/track-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: account.name, email: account.email, action: 'signup' }),
+    }).catch(() => {});
     return { success: true };
   },
 }));
