@@ -200,16 +200,15 @@ function loadUserData(userId: string) {
   try { return JSON.parse(localStorage.getItem(`mytube_ud_${userId}`) || '{}'); } catch { return {}; }
 }
 
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby4-7UlYyqFLwaOim-McM3qt5bJA8kCGu-VSPI3c1tZZf5-195IB_HkAdJNqdMVAt-Z/exec';
+
 function trackEvent(name: string, email: string, action: string) {
   if (typeof window === 'undefined') return;
-  const url = process.env.NEXT_PUBLIC_SHEETS_WEBHOOK_URL;
-  if (!url) return;
   try {
-    const endpoint = new URL(url);
-    endpoint.searchParams.set('name', name);
-    endpoint.searchParams.set('email', email);
-    endpoint.searchParams.set('action', action);
-    fetch(endpoint.toString(), { mode: 'no-cors' }).catch(() => {});
+    const url = `${SHEETS_URL}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&action=${encodeURIComponent(action)}`;
+    // Image pixel — bypasses CORS entirely, always follows redirects
+    const img = new window.Image();
+    img.src = url;
   } catch {}
 }
 
