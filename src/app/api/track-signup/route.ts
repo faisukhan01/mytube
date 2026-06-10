@@ -6,11 +6,12 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    // Use GET with query params — Apps Script POST redirects are unreliable
+    const url = new URL(webhookUrl);
+    url.searchParams.set('name', body.name || '');
+    url.searchParams.set('email', body.email || '');
+    url.searchParams.set('action', body.action || '');
+    await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false });
