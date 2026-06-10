@@ -32,6 +32,7 @@ export default function Home() {
     currentVideo,
     searchQuery,
     checkSession,
+    user,
   } = useYouTubeStore();
 
   const showCategoryChips = currentView === 'home';
@@ -114,11 +115,11 @@ export default function Home() {
   // Update page title based on current view
   useEffect(() => {
     if (currentView === 'player' && currentVideo) {
-      document.title = `${currentVideo.title} - YouTube`;
+      document.title = `${currentVideo.title} - MyTube`;
     } else if (currentView === 'search' && searchQuery) {
-      document.title = `${searchQuery} - YouTube`;
+      document.title = `${searchQuery} - MyTube`;
     } else {
-      document.title = 'YouTube';
+      document.title = 'MyTube';
     }
   }, [currentView, currentVideo, searchQuery]);
 
@@ -213,7 +214,7 @@ export default function Home() {
             <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Terms</a>
             <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Privacy</a>
             <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Policy & Safety</a>
-            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">How YouTube works</a>
+            <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">How MyTube works</a>
             <a href="#" className="footer-link hover:text-gray-900 dark:hover:text-gray-200">Test new features</a>
           </div>
           {/* Section 3: Restricted Mode, etc */}

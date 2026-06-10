@@ -192,6 +192,22 @@ export const homeVideos: Video[] = [
   createVideo('b9eMGE7QtTk', 'Full Stack Development with Next.js and Prisma', 'Web Dev Simplified', '2.8M views', '1 year ago', '1:22:33', 'Learn full stack development with Next.js and Prisma ORM.', 'Programming', '1.5M'),
   createVideo('zwUSZD3t_BU', 'AI Devloper Roadmap 2025 - How to Become an AI Engineer', 'Tiff In Tech', '1.2M views', '5 months ago', '12:45', 'How to become an AI developer in 2025 - the complete roadmap.', 'Programming', '850K'),
 
+  // ==================== JAVA, DSA & ALGORITHMS ====================
+  createVideo('8hly31xKli0', 'Data Structures Easy to Advanced Course - Full Tutorial', 'freeCodeCamp.org', '3.2M views', '5 years ago', '8:03:28', 'Learn data structures and algorithms with this comprehensive course. Covers arrays, linked lists, stacks, queues, trees, graphs, hash tables and more. Ideal for DSA interview prep.', 'Programming', '10M'),
+  createVideo('grEKMHGYyns', 'Java Full Course for Beginners | Java Tutorial', 'freeCodeCamp.org', '6.8M views', '4 years ago', '9:26:32', 'Learn Java programming from scratch in this full course. Covers core Java, OOP, collections, data structures in Java, and more.', 'Programming', '10M'),
+  createVideo('eAly68TSQIM', 'Java Tutorial for Beginners [2023]', 'Programming with Mosh', '8.5M views', '5 years ago', '2:30:29', 'Java tutorial for beginners - learn Java programming step by step. Covers all core Java concepts and object-oriented programming.', 'Programming', '3.5M'),
+  createVideo('NBkg4GvN4kk', 'Algorithms and Data Structures Tutorial - Full Course for Beginners', 'freeCodeCamp.org', '4.8M views', '2 years ago', '5:22:04', 'Learn all major algorithms and data structures including sorting algorithms, searching algorithms, dynamic programming, trees, and graphs.', 'Programming', '10M'),
+  createVideo('Qmt0QwZEmyA', 'Data Structures and Algorithms in Java - Full Course', 'Telusko', '5.2M views', '4 years ago', '6:20:00', 'Complete DSA course in Java. Data structures and algorithms in Java covering arrays, linked lists, trees, graphs, sorting, and searching algorithms.', 'Programming', '2.5M'),
+  createVideo('RBSGKlAvoiM', 'Dynamic Programming - Learn to Solve Algorithmic Problems & Coding Challenges', 'freeCodeCamp.org', '3.5M views', '3 years ago', '5:00:54', 'Learn dynamic programming from scratch. Covers memoization, tabulation, and all classic DP algorithms for coding interviews.', 'Programming', '10M'),
+  createVideo('bum_19loj9A', 'Graph Algorithms for Technical Interviews - Full Course', 'freeCodeCamp.org', '2.5M views', '3 years ago', '2:53:21', 'Learn graph algorithms including BFS, DFS, Dijkstra shortest path, Bellman-Ford, topological sort, and more.', 'Programming', '10M'),
+  createVideo('lkIFF4maKMU', 'Java DSA Full Course - Data Structures & Algorithms in Java', 'Apna College', '8.5M views', '2 years ago', '49:05:00', 'Complete Java DSA course covering all data structures and algorithms. Learn Java DSA from basics to advanced with practice problems and coding interviews.', 'Programming', '4.5M'),
+  createVideo('0IAPZzGSbME', 'Java Programming for Beginners - Full Course', 'Amigoscode', '4.2M views', '3 years ago', '4:35:05', 'Complete Java programming course for beginners. Learn core Java, OOP, collections framework, and Java data structures in this comprehensive tutorial.', 'Programming', '1.2M'),
+  createVideo('CBYHwZcbD-s', 'Sorting Algorithms Explained Visually - Bubble, Merge, Quick Sort in Java', 'CS Dojo', '3.1M views', '4 years ago', '28:15', 'Sorting algorithms explained with visualizations - bubble sort, insertion sort, merge sort, quick sort, and heap sort in Java.', 'Programming', '820K'),
+  createVideo('_t2GVaQasRY', 'LeetCode Dynamic Programming - Top Interview Patterns', 'NeetCode', '2.8M views', '2 years ago', '3:45:00', 'Solve LeetCode dynamic programming problems. Learn DP patterns and algorithms for coding interviews. Java and Python solutions included.', 'Programming', '620K'),
+  createVideo('jUyxBOhSxMk', 'Binary Trees and Binary Search Trees - Java Full Course', 'William Fiset', '2.4M views', '4 years ago', '4:00:00', 'Learn binary trees, binary search trees BST, AVL trees, and tree traversal algorithms with Java implementations.', 'Programming', '310K'),
+  createVideo('oBt53YbR9Kk', 'C++ Data Structures & Algorithms + LEETCODE Exercises', 'Scott Barrett', '4.5M views', '2 years ago', '10:15:00', 'Complete data structures and algorithms course with LeetCode exercises. Covers all DSA topics for coding interviews.', 'Programming', '650K'),
+  createVideo('t2CEgPsws3U', 'Java Programming - Solve 100+ Problems | Data Structures', 'Kunal Kushwaha', '3.2M views', '3 years ago', '8:00:00', 'Java programming course solving over 100 problems covering arrays, strings, recursion, data structures, and algorithms.', 'Programming', '1.8M'),
+
   // ==================== SCIENCE & EDUCATION ====================
   createVideo('QImCld9YubE', 'The Largest Black Hole in the Universe - Size Comparison', 'Kurzgesagt – In a Nutshell', '22M views', '3 years ago', '10:02', 'The largest black hole in the universe explained by Kurzgesagt.', 'Science', '22M'),
   createVideo('JtUAAXe_0VI', 'The Egg - A Short Story', 'Kurzgesagt – In a Nutshell', '40M views', '5 years ago', '7:42', 'A short story by Andy Weir, animated by Kurzgesagt.', 'Science', '22M'),
@@ -516,19 +532,85 @@ export function getShuffledShorts(): Video[] {
   return shuffleArray(shortsVideos);
 }
 
+const SEARCH_STOP_WORDS = new Set([
+  'the','and','for','in','of','to','a','an','is','it','on','at','by','or','as',
+  'with','this','from','that','these','those','how','what','when','where','why',
+  'who','which','will','can','would','could','should','have','has','had','do',
+  'does','did','be','been','being','are','was','were','if','so','up','out',
+  'about','into','just','now','than','not','but','no','any','all','very',
+  'my','your','they','them','we','you','more','also','only','even','back','after',
+  'best','top','new','official','video','videos','watch','learn','tutorial',
+  'tutorials','guide','tips','tricks','beginners','beginner','advanced',
+  'complete','course','full','make','build','get','using','see','show',
+  '2019','2020','2021','2022','2023','2024','2025',
+]);
+
+const KEYWORD_TO_CATEGORY: Record<string, string> = {
+  song:'Music', songs:'Music', music:'Music', mv:'Music', audio:'Music',
+  pop:'Music', rap:'Music', hiphop:'Music', rnb:'Music', rock:'Music',
+  jazz:'Music', kpop:'Music', singer:'Music', band:'Music', artist:'Music',
+  playlist:'Music', album:'Music', bts:'Music', blackpink:'Music',
+  eminem:'Music', drake:'Music', adele:'Music', beyonce:'Music', shakira:'Music',
+  game:'Gaming', games:'Gaming', gaming:'Gaming', gameplay:'Gaming',
+  gamer:'Gaming', playstation:'Gaming', ps5:'Gaming', xbox:'Gaming',
+  minecraft:'Gaming', fortnite:'Gaming', gta:'Gaming', roblox:'Gaming',
+  coding:'Programming', code:'Programming', developer:'Programming',
+  javascript:'Programming', python:'Programming', java:'Programming',
+  dsa:'Programming', algorithms:'Programming', sql:'Programming',
+  html:'Programming', css:'Programming', react:'Programming',
+  football:'Sports', soccer:'Sports', basketball:'Sports', cricket:'Sports',
+  tennis:'Sports', nba:'Sports', fifa:'Sports', sports:'Sports', sport:'Sports',
+  messi:'Sports', ronaldo:'Sports', nfl:'Sports',
+  cooking:'Cooking', recipe:'Cooking', food:'Cooking', cook:'Cooking',
+  chef:'Cooking', baking:'Cooking', kitchen:'Cooking',
+  science:'Science', physics:'Science', space:'Science', nasa:'Science',
+  biology:'Science', chemistry:'Science', universe:'Science',
+  funny:'Entertainment', viral:'Entertainment', prank:'Entertainment',
+  mrbeast:'Entertainment', challenge:'Entertainment', vlog:'Entertainment',
+  comedy:'Comedy', comedian:'Comedy',
+};
+
+function categoryFromQuery(q: string): string | null {
+  if (KEYWORD_TO_CATEGORY[q]) return KEYWORD_TO_CATEGORY[q];
+  for (const [kw, cat] of Object.entries(KEYWORD_TO_CATEGORY)) {
+    if (q.includes(kw)) return cat;
+  }
+  return null;
+}
+
 export function searchVideos(query: string): Video[] {
-  const q = query.toLowerCase();
-  const seen = new Set<string>();
-  return [...homeVideos, ...shortsVideos].filter(
-    v => {
-      if (seen.has(v.id)) return false;
-      seen.add(v.id);
-      return v.title.toLowerCase().includes(q) ||
-      v.channelTitle.toLowerCase().includes(q) ||
-      v.category.toLowerCase().includes(q) ||
-      v.description.toLowerCase().includes(q);
+  const q = query.toLowerCase().trim();
+  const words = q.split(/\s+/).filter(w => w.length > 1 && !SEARCH_STOP_WORDS.has(w));
+  const allVideos = [...homeVideos, ...shortsVideos];
+  const foundIds = new Set<string>();
+  const scored: Array<{ video: Video; score: number }> = [];
+
+  for (const v of allVideos) {
+    if (foundIds.has(v.id)) continue;
+    const text = `${v.title} ${v.channelTitle} ${v.category} ${v.description}`.toLowerCase();
+    let s = 0;
+    if (text.includes(q)) s = 3;
+    else if (words.length > 0 && words.every(w => text.includes(w))) s = 2;
+    else if (words.length > 0 && words.some(w => text.includes(w))) s = 1;
+    if (s > 0) { foundIds.add(v.id); scored.push({ video: v, score: s }); }
+  }
+  const textResults = scored.sort((a, b) => b.score - a.score).map(r => r.video);
+
+  if (textResults.length < 5) {
+    const cat = categoryFromQuery(q);
+    if (cat) {
+      const catVideos = homeVideos.filter(v => v.category === cat && !foundIds.has(v.id)).slice(0, 20);
+      const combined = [...textResults, ...catVideos];
+      if (combined.length >= 5) return combined;
     }
-  );
+  }
+
+  // Nothing matched → never show empty, return popular videos
+  if (textResults.length === 0) {
+    return homeVideos.slice(0, 20);
+  }
+
+  return textResults;
 }
 
 export function getRelatedVideos(videoId: string): Video[] {

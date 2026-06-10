@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 
 export default function CategoryChips() {
-  const { selectedCategory, setSelectedCategory } = useYouTubeStore();
+  const { selectedCategory, setSelectedCategory, user } = useYouTubeStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);

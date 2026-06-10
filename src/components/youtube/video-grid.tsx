@@ -84,7 +84,31 @@ export default function VideoGrid() {
   // Ref for intersection observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Local hardcoded videos
+  // Live videos from /api/youtube/home (replaces local data when loaded)
+  const [liveVideos, setLiveVideos] = useState<Video[]>([]);
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
+
+  // Fetch live videos from YouTube API for any category
+  useEffect(() => {
+    let cancelled = false;
+    setLiveVideos([]);
+    setIsLoadingLive(true);
+    // Add a random seed so each refresh gets shuffled results from the API
+    fetch(`/api/youtube/home?category=${encodeURIComponent(selectedCategory)}&maxResults=50&_=${Date.now()}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (!cancelled && data.videos?.length > 0) {
+          // Shuffle so videos appear in different order on every visit
+          const shuffled = [...data.videos].sort(() => Math.random() - 0.5);
+          setLiveVideos(shuffled);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setIsLoadingLive(false); });
+    return () => { cancelled = true; };
+  }, [selectedCategory]);
+
+  // Local hardcoded videos — used as instant placeholder while API loads
   const localVideos = useMemo(() => {
     return getVideosByCategory(selectedCategory);
   }, [selectedCategory]);
@@ -113,22 +137,19 @@ export default function VideoGrid() {
     return 999999;
   };
 
-  // Combine local + dynamic videos (deduplicated)
+  // Combine live API videos + dynamic discover videos (deduplicated).
+  // Live API videos take priority; local data is shown only as a fallback while loading.
   const allVideos = useMemo(() => {
     const seen = new Set<string>();
     const combined: Video[] = [];
 
-    for (const v of localVideos) {
-      if (!seen.has(v.id)) {
-        seen.add(v.id);
-        combined.push(v);
-      }
+    // Prefer live YouTube API results; fall back to local if still loading
+    const primary = liveVideos.length > 0 ? liveVideos : (isLoadingLive ? [] : localVideos);
+    for (const v of primary) {
+      if (!seen.has(v.id)) { seen.add(v.id); combined.push(v); }
     }
     for (const v of dynamicVideos) {
-      if (!seen.has(v.id)) {
-        seen.add(v.id);
-        combined.push(v);
-      }
+      if (!seen.has(v.id)) { seen.add(v.id); combined.push(v); }
     }
 
     // Sort based on selected option
@@ -141,7 +162,7 @@ export default function VideoGrid() {
     // 'relevance' keeps original order
 
     return sorted;
-  }, [localVideos, dynamicVideos, sortBy]);
+  }, [localVideos, liveVideos, isLoadingLive, dynamicVideos, sortBy]);
 
   // Fetch dynamic videos for a category
   const fetchDynamicVideos = useCallback(async (category: string, page: number) => {

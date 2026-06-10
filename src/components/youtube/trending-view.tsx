@@ -1,9 +1,10 @@
 'use client';
 
 import { homeVideos } from '@/lib/youtube-data';
+import type { Video } from '@/lib/youtube-data';
 import { useYouTubeStore } from '@/store/youtube-store';
 import { Flame, Music, Gamepad2, Film, Play, Clock, ListPlus, MoreVertical } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,17 +39,46 @@ const categoryColors: Record<string, string> = {
   Learning: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
 };
 
+// Map tab id → category query param for /api/youtube/home
+const TAB_CATEGORY: Record<string, string> = {
+  now: 'All', music: 'Music', gaming: 'Gaming', movies: 'Movies',
+};
+
+// Local fallback data per tab
+function localFallback(tab: string): Video[] {
+  if (tab === 'music')  return homeVideos.filter(v => v.category === 'Music').slice(0, 20);
+  if (tab === 'gaming') return homeVideos.filter(v => v.category === 'Gaming').slice(0, 20);
+  if (tab === 'movies') return homeVideos.filter(v => v.category === 'Movies').slice(0, 20);
+  return homeVideos.slice(0, 20);
+}
+
 export default function TrendingView() {
   const [activeTab, setActiveTab] = useState('now');
   const { openVideo, openChannel, toggleWatchLater, watchLater } = useYouTubeStore();
 
+  // Live trending videos from YouTube API
+  const [liveVideos, setLiveVideos] = useState<Record<string, Video[]>>({});
+  const [loadingTab, setLoadingTab] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tab = activeTab;
+    if (liveVideos[tab]) return; // already fetched
+    setLoadingTab(tab);
+    const category = TAB_CATEGORY[tab] || 'All';
+    fetch(`/api/youtube/home?category=${encodeURIComponent(category)}&maxResults=20`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        if (data.videos?.length > 0) {
+          setLiveVideos(prev => ({ ...prev, [tab]: data.videos }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingTab(null));
+  }, [activeTab, liveVideos]);
+
   const trendingVideos = useMemo(() => {
-    if (activeTab === 'now') return homeVideos.slice(0, 20);
-    if (activeTab === 'music') return homeVideos.filter(v => v.category === 'Music').slice(0, 20);
-    if (activeTab === 'gaming') return homeVideos.filter(v => v.category === 'Gaming').slice(0, 20);
-    if (activeTab === 'movies') return homeVideos.filter(v => v.category === 'Movies').slice(0, 20);
-    return homeVideos.slice(0, 20);
-  }, [activeTab]);
+    return liveVideos[activeTab] ?? localFallback(activeTab);
+  }, [activeTab, liveVideos]);
 
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
@@ -59,7 +89,7 @@ export default function TrendingView() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Trending</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">See what&apos;s trending on YouTube right now</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">See what&apos;s trending on MyTube right now</p>
         </div>
       </div>
 
@@ -90,6 +120,14 @@ export default function TrendingView() {
           })}
         </div>
       </div>
+
+      {/* Loading indicator while fetching live data */}
+      {loadingTab === activeTab && (
+        <div className="flex items-center gap-2 mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="w-4 h-4 rounded-full border-2 border-transparent border-t-red-600 animate-spin" />
+          Loading live trending videos…
+        </div>
+      )}
 
       {/* Trending video list */}
       <div className="space-y-1">

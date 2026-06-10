@@ -97,22 +97,17 @@ export default function SearchResults() {
     setIsLoading(true);
     setError(null);
     try {
-      // Try the API first
       const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error('Search failed');
       const data = await res.json();
       if (data.videos && data.videos.length > 0) {
         setSearchResults(data.videos);
       } else {
-        // Fallback to local search
-        const localResults = searchVideos(query);
-        setSearchResults(localResults);
+        setSearchResults(searchVideos(query));
       }
     } catch {
-      // Fallback to local search
       try {
-        const localResults = searchVideos(query);
-        setSearchResults(localResults);
+        setSearchResults(searchVideos(query));
       } catch {
         setError('Something went wrong. Please try again.');
         setSearchResults([]);

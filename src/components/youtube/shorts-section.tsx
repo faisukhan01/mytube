@@ -1,11 +1,20 @@
 'use client';
 
-import { shortsVideos } from '@/lib/youtube-data';
+import { shortsVideos, type Video } from '@/lib/youtube-data';
 import { useYouTubeStore } from '@/store/youtube-store';
 import { ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function ShortsSection() {
-  const { setCurrentView } = useYouTubeStore();
+  const { setCurrentView, openShort } = useYouTubeStore();
+  const [videos, setVideos] = useState<Video[]>(shortsVideos.slice(0, 12));
+
+  useEffect(() => {
+    fetch('/api/youtube/shorts')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.videos?.length > 5) setVideos(data.videos.slice(0, 12)); })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="p-4 md:p-6">
@@ -28,11 +37,15 @@ export default function ShortsSection() {
         </button>
       </div>
 
-      {/* Shorts grid - each short is clickable via VideoCard */}
+      {/* Shorts grid */}
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
-        {shortsVideos.map((video) => (
-          <div key={video.id} className="shrink-0 w-[180px] group/short">
-            <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 cursor-pointer transition-all duration-300 group-hover/short:scale-[1.02] group-hover/short:brightness-95 dark:group-hover/short:brightness-110">
+        {videos.map((video, index) => (
+          <div
+            key={video.id}
+            className="shrink-0 w-[180px] group/short cursor-pointer"
+            onClick={() => openShort(index)}
+          >
+            <div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 transition-all duration-300 group-hover/short:scale-[1.02] group-hover/short:brightness-95 dark:group-hover/short:brightness-110">
               <img
                 src={video.thumbnail}
                 alt={video.title}
