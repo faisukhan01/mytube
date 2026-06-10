@@ -260,7 +260,7 @@ export default function MyTubeHeader() {
             {/* Text wordmark — hidden on mobile */}
             <span className="hidden sm:flex items-end leading-none select-none">
               <span className="text-[18px] font-bold tracking-tight text-gray-900 dark:text-white" style={{fontFamily:'Roboto,Arial,sans-serif', letterSpacing:'-0.5px'}}>MyTube</span>
-              <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-0.5 mb-0.5">PK</span>
+              <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-0.5 mb-0.5">by FSK</span>
             </span>
           </div>
         </div>

@@ -104,9 +104,9 @@ const exploreItems: SidebarItem[] = [
 ];
 
 const moreFromYouTubeItems: SidebarItem[] = [
-  { icon: <Youtube className="w-5 h-5 text-red-500" />, label: 'YouTube Premium', dialogId: 'premium' },
-  { icon: <Music2 className="w-5 h-5 text-red-500" />, label: 'YouTube Music', category: 'Music' },
-  { icon: <Baby className="w-5 h-5 text-red-500" />, label: 'YouTube Kids', category: 'Learning' },
+  { icon: <Youtube className="w-5 h-5 text-red-500" />, label: 'MyTube Premium', dialogId: 'premium' },
+  { icon: <Music2 className="w-5 h-5 text-red-500" />, label: 'MyTube Music', category: 'Music' },
+  { icon: <Baby className="w-5 h-5 text-red-500" />, label: 'MyTube Kids', category: 'Learning' },
 ];
 
 const moreItems: SidebarItem[] = [
@@ -185,17 +185,17 @@ export default function YouTubeSidebar() {
     { icon: <Shield className="w-5 h-5" />, title: 'Ad-free videos', desc: 'Watch videos without interruptions' },
     { icon: <Download className="w-5 h-5" />, title: 'Offline downloads', desc: 'Download videos to watch offline' },
     { icon: <Smartphone className="w-5 h-5" />, title: 'Background play', desc: 'Listen while using other apps' },
-    { icon: <Tv className="w-5 h-5" />, title: 'YouTube Music Premium', desc: 'Ad-free music streaming' },
-    { icon: <MonitorPlay className="w-5 h-5" />, title: 'YouTube Kids', desc: 'Ad-free & offline in YouTube Kids' },
+    { icon: <Tv className="w-5 h-5" />, title: 'MyTube Music Premium', desc: 'Ad-free music streaming' },
+    { icon: <MonitorPlay className="w-5 h-5" />, title: 'MyTube Kids', desc: 'Ad-free & offline in MyTube Kids' },
   ];
 
   const helpTopics = [
-    { title: 'Get started with YouTube', desc: 'Learn the basics of using YouTube' },
+    { title: 'Get started with MyTube', desc: 'Learn the basics of using MyTube' },
     { title: 'Troubleshoot video playback issues', desc: 'Fix problems playing videos' },
     { title: 'Manage your account settings', desc: 'Update your profile and preferences' },
     { title: 'Community Guidelines', desc: 'Learn about our policies and rules' },
     { title: 'Privacy & Safety', desc: 'Manage your privacy and safety settings' },
-    { title: 'Copyright & Rights Management', desc: 'Understand copyright on YouTube' },
+    { title: 'Copyright & Rights Management', desc: 'Understand copyright on MyTube' },
   ];
 
   // Mini sidebar (collapsed)
@@ -247,8 +247,8 @@ export default function YouTubeSidebar() {
               <path d="M27.9727 3.12324C27.6435 1.89323 26.6768 0.926623 25.4468 0.597366C23.2197 2.24288e-07 14.285 0 14.285 0C14.285 0 5.35042 2.24288e-07 3.12323 0.597366C1.89323 0.926623 0.926623 1.89323 0.597366 3.12324C2.24288e-07 5.35042 0 10 0 10C0 10 2.24288e-07 14.6496 0.597366 16.8768C0.926623 18.1068 1.89323 19.0734 3.12323 19.4026C5.35042 20 14.285 20 14.285 20C14.285 20 23.2197 20 25.4468 19.4026C26.6768 19.0734 27.6435 18.1068 27.9727 16.8768C28.5701 14.6496 28.5701 10 28.5701 10C28.5701 10 28.5677 5.35042 27.9727 3.12324Z" fill="#FF0000"/>
               <path d="M11.4253 14.2854L18.8477 10.0004L11.4253 5.71533V14.2854Z" fill="white"/>
             </svg>
-            <span className="text-[19px] font-bold tracking-[-0.5px] text-[#282828] dark:text-white leading-none" style={{ fontFamily: '"YouTube Sans", Roboto, Arial, sans-serif' }}>YouTube</span>
-            <span className="text-[10px] text-[#606060] dark:text-[#aaa] -mt-2.5 font-medium">PK</span>
+            <span className="text-[19px] font-bold tracking-[-0.5px] text-[#282828] dark:text-white leading-none" style={{ fontFamily: '"YouTube Sans", Roboto, Arial, sans-serif' }}>MyTube</span>
+            <span className="text-[10px] text-[#606060] dark:text-[#aaa] -mt-2.5 font-medium">by FSK</span>
           </div>
 
           {/* Main items */}
@@ -306,8 +306,8 @@ export default function YouTubeSidebar() {
 
           <Separator className="my-2 bg-gray-200 dark:bg-gray-700 transition-all duration-300" />
 
-          {/* More from YouTube */}
-          <h3 className="px-3 mb-0.5 text-[11px] text-gray-500 dark:text-gray-200 font-medium uppercase tracking-wider">More from YouTube</h3>
+          {/* More from MyTube */}
+          <h3 className="px-3 mb-0.5 text-[11px] text-gray-500 dark:text-gray-200 font-medium uppercase tracking-wider">More from MyTube</h3>
           {moreFromYouTubeItems.map((item) => (
             <button
               key={item.label}
@@ -336,14 +336,13 @@ export default function YouTubeSidebar() {
           <Separator className="my-2 bg-gray-200 dark:bg-gray-700" />
 
           {/* Footer */}
-          <div className="px-3 py-2">
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              About Press Copyright Contact us Creators Advertise Developers
+          <div className="px-3 py-4">
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed italic">
+              "The people who are crazy enough to think they can change the world are the ones who do."
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mt-2">
-              Terms Privacy Policy & Safety How YouTube works Test new features
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-3 font-medium not-italic">
+              — Faisal Khan | Software Engineer
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">© 2025 Google LLC</p>
           </div>
         </div>
       </aside>
@@ -360,12 +359,12 @@ export default function YouTubeSidebar() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Crown className="w-6 h-6 text-red-600" />
-              YouTube Premium
+              MyTube Premium
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Enjoy uninterrupted videos and more with YouTube Premium. Get the best of YouTube with these benefits:
+              Enjoy uninterrupted videos and more with MyTube Premium. Get the best of MyTube with these benefits:
             </p>
             <div className="space-y-3">
               {premiumFeatures.map((feature) => (
@@ -383,7 +382,7 @@ export default function YouTubeSidebar() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Free for 1 month, cancel anytime</p>
             </div>
             <Button className="w-full bg-red-600 hover:bg-red-700 text-white rounded-full">
-              Get YouTube Premium
+              Get MyTube Premium
             </Button>
           </div>
         </DialogContent>
@@ -550,7 +549,7 @@ export default function YouTubeSidebar() {
               />
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Some account and system information may be sent to YouTube. We will use this information to improve our products and services.
+              Some account and system information may be sent to MyTube. We will use this information to improve our products and services.
             </p>
           </div>
           <DialogFooter>
