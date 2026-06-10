@@ -200,6 +200,19 @@ function loadUserData(userId: string) {
   try { return JSON.parse(localStorage.getItem(`mytube_ud_${userId}`) || '{}'); } catch { return {}; }
 }
 
+function trackEvent(name: string, email: string, action: string) {
+  if (typeof window === 'undefined') return;
+  const url = process.env.NEXT_PUBLIC_SHEETS_WEBHOOK_URL;
+  if (!url) return;
+  try {
+    const endpoint = new URL(url);
+    endpoint.searchParams.set('name', name);
+    endpoint.searchParams.set('email', email);
+    endpoint.searchParams.set('action', action);
+    fetch(endpoint.toString(), { mode: 'no-cors' }).catch(() => {});
+  } catch {}
+}
+
 function saveUserData(userId: string, liked: string[], watchlater: string[], history: string[]) {
   if (typeof window === 'undefined') return;
   try { localStorage.setItem(`mytube_ud_${userId}`, JSON.stringify({ liked, watchlater, history })); } catch {}
@@ -568,12 +581,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     set({ user: userData });
     const data = loadUserData(userData.id);
     set({ likedVideos: data.liked || [], watchLater: data.watchlater || [], watchHistory: data.history || [] });
-    // Track sign in
-    fetch('/api/track-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: account.name, email: account.email, action: 'signin' }),
-    }).catch(() => {});
+    trackEvent(account.name, account.email, 'signin');
     return { success: true };
   },
 
@@ -595,12 +603,7 @@ export const useYouTubeStore = create<YouTubeState>((set, get) => ({
     const userData: UserData = { id: account.id, name: account.name, email: account.email, avatar: account.avatar, initials: account.initials, color: account.color };
     saveSession(userData);
     set({ user: userData, likedVideos: [], watchLater: [], watchHistory: [] });
-    // Track sign up
-    fetch('/api/track-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: account.name, email: account.email, action: 'signup' }),
-    }).catch(() => {});
+    trackEvent(account.name, account.email, 'signup');
     return { success: true };
   },
 }));
