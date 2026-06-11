@@ -80,7 +80,7 @@ type FilterState = {
 
 export default function SearchResults() {
   const { searchQuery, searchResults, setSearchResults } = useYouTubeStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(() => !!searchQuery);
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [error, setError] = useState<string | null>(null);
   const [showFilterPanel, setShowFilterPanel] = useState(false);

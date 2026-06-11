@@ -143,8 +143,8 @@ export default function VideoGrid() {
     const seen = new Set<string>();
     const combined: Video[] = [];
 
-    // Prefer live YouTube API results; fall back to local if still loading
-    const primary = liveVideos.length > 0 ? liveVideos : (isLoadingLive ? [] : localVideos);
+    // Prefer live YouTube API results; always fall back to local while API is loading
+    const primary = liveVideos.length > 0 ? liveVideos : localVideos;
     for (const v of primary) {
       if (!seen.has(v.id)) { seen.add(v.id); combined.push(v); }
     }
@@ -162,7 +162,7 @@ export default function VideoGrid() {
     // 'relevance' keeps original order
 
     return sorted;
-  }, [localVideos, liveVideos, isLoadingLive, dynamicVideos, sortBy]);
+  }, [localVideos, liveVideos, dynamicVideos, sortBy]);
 
   // Fetch dynamic videos for a category
   const fetchDynamicVideos = useCallback(async (category: string, page: number) => {
